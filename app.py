@@ -24,6 +24,7 @@ from firebase import (
     get_vacantes_by_empresa_id,
     create_vacante,
     get_empresa_by_id,
+    get_vacante_by_id,
     update_vacante,
     delete_vacante,
     verify_vacante_belongs_to_empresa,
@@ -322,14 +323,26 @@ def alumnos_vacantes():
 @app.route('/alumnos/postular', methods=['POST'])
 def alumnos_postular():
     data = request.get_json()
-    nombre = data.get('nombre')
-    correo = data.get('correo')
-    mensaje = data.get('mensaje')
-    vacante_id = data.get('vacanteId')
 
-    # Aquí podrías conectar con Firebase o guardar en tu base de datos
-    print(f"Postulación recibida: {nombre} ({correo}) a la vacante {vacante_id}")
-    
+    # New postulation data structure
+    alumno_id = data.get('alumnoID')
+    correo_alumno = data.get('correoAlumno')
+    correo_empresa = data.get('correoEmpresa')
+    empresa_id = data.get('empresaID')
+    fecha_postulacion = data.get('fechaPostulacion')
+    nombre_alumno = data.get('nombreAlumno')
+    nombre_empresa = data.get('nombreEmpresa')
+    nombre_vacante = data.get('nombreVacante')
+    vacante_id = data.get('vacanteID')
+    mensaje = data.get('mensaje')
+
+    # Log the received postulation with new structure
+    print(f"Postulación recibida:")
+    print(f"  - Alumno: {nombre_alumno} (ID: {alumno_id}, Email: {correo_alumno})")
+    print(f"  - Empresa: {nombre_empresa} (ID: {empresa_id}, Email: {correo_empresa})")
+    print(f"  - Vacante: {nombre_vacante} (ID: {vacante_id})")
+    print(f"  - Fecha: {fecha_postulacion}")
+
     return jsonify({"success": True, "msg": "Postulación recibida correctamente."})
 
 @app.route("/alumnos/metricas")
@@ -585,6 +598,57 @@ def admin_update_subscription():
         )
 
 
+@app.route("/empresas/vacante/<vacante_id>/postulantes")
+def empresa_vacante_postulantes(vacante_id):
+    """
+    View all applicants (postulantes) for a specific vacancy
+    """
+    # Check if user is authenticated as empresa
+    if "user_email" not in session or session.get("user_role") != "empresa":
+        return redirect(url_for("empresas_login"))
+
+    # Get empresa document ID from session
+    doc_id = session.get("empresa_doc_id")
+    if not doc_id:
+        correo = session["user_email"]
+        empresa = get_empresa_by_correo(correo)
+        if empresa:
+            doc_id = empresa["doc_id"]
+            session["empresa_doc_id"] = doc_id
+        else:
+            flash("Error: No se encontró la empresa.", "error")
+            return redirect(url_for("empresa_datos"))
+
+    # Verify this vacante belongs to the empresa
+    if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
+        flash("No tienes permiso para ver esta vacante.", "error")
+        return redirect(url_for("empresa_dashboard"))
+
+    # Get vacante details
+    vacante = get_vacante_by_id(vacante_id)
+    if not vacante:
+        flash("Vacante no encontrada.", "error")
+        return redirect(url_for("empresa_dashboard"))
+
+    # Prepare Firebase config for client-side SDK
+    firebase_config = {
+        "apiKey": os.getenv("FIREBASE_API_KEY"),
+        "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
+        "projectId": os.getenv("FIREBASE_PROJECT_ID"),
+        "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
+        "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
+        "appId": os.getenv("FIREBASE_APP_ID"),
+        "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID"),
+    }
+
+    return render_template(
+        "empresa_postulantes.html",
+        vacante=vacante,
+        vacante_id=vacante_id,
+        firebase_config=firebase_config
+    )
+
+
 @app.route("/empresas/nueva-vacante", methods=["GET", "POST"])
 def nueva_vacante():
     # Check if user is authenticated as empresa
@@ -611,6 +675,8 @@ def nueva_vacante():
 
     # Get empresa data for the form
     empresa = get_empresa_by_correo(session["user_email"])
+    print(f"DEBUG - Empresa data: {empresa}")
+    print(f"DEBUG - Empresa correo: {empresa.get('correo', 'NOT FOUND')}")
 
     if request.method == "POST":
         # Collect form data
@@ -627,7 +693,9 @@ def nueva_vacante():
                 "experienciaRequerida", ""
             ).strip(),
             "nombreEmpresa": empresa.get("nombre", ""),
+            "correoEmpresa": empresa.get("correo", ""),
         }
+        print(f"DEBUG - Vacante data being prepared: {vacante_data}")
 
         # Handle sueldo (number)
         sueldo_str = request.form.get("sueldo", "").strip()
@@ -824,10 +892,11 @@ def api_create_vacante(empresa_id, empresa):
             "sueldo": data.get("sueldo"),
             "educacion": data.get("educacion", ""),
             "experienciaRequerida": data.get("experienciaRequerida", ""),
-            "habilidadesDuras": data.get("habilidadesDuras", []),
-            "idiomas": data.get("idiomas", []),
-            "nombreEmpresa": empresa.get("nombre", ""),
-            "activa": data.get("activa", True),
+            "habilidadesDuras": data.get("habilidadesDuras", []), #array
+            "idiomas": data.get("idiomas", []), #array
+            "nombreEmpresa": empresa.get("nombre", ""), #No enviar en postman
+            "correoEmpresa": empresa.get("correo", ""), #"No enviar en postman"
+            "activa": data.get("activa", True), #No enviar en postman
         }
 
         # Create the vacante

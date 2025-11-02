@@ -20,7 +20,7 @@
     <div class="dashboard-container">
         <!-- Header -->
         <header class="dashboard-header">
-            <h1>Dashboard de Vacantes</h1>
+            <h1>Dashboard de Vacantes <span class="vacancy-count">({{ vacantes|length }})</span></h1>
             <div class="header-actions">
                 <a href="{{ url_for('nueva_vacante') }}" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
@@ -42,19 +42,6 @@
                 </div>
             {% endif %}
         {% endwith %}
-
-        <!-- Stats -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                </div>
-                <div class="stat-content">
-                    <h3>{{ vacantes|length }}</h3>
-                    <p>Vacante{% if vacantes|length != 1 %}s{% endif %} Publicada{% if vacantes|length != 1 %}s{% endif %}</p>
-                </div>
-            </div>
-        </div>
 
         <!-- Vacantes List -->
         {% if vacantes %}
@@ -137,6 +124,19 @@
                                 </div>
                             </div>
                         {% endif %}
+
+                        <!-- Actions -->
+                        <div class="vacante-section" style="margin-top: 1rem; border-top: 1px solid #e0e0e0; padding-top: 1rem;">
+                            <a href="{{ url_for('empresa_vacante_postulantes', vacante_id=vacante.id) }}" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Ver Postulantes
+                            </a>
+                        </div>
                     </article>
                 {% endfor %}
             </div>

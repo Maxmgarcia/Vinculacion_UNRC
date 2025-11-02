@@ -144,7 +144,8 @@ def verify_google_id_token(id_token):
     Returns the decoded token (user info) if valid, otherwise None.
     """
     try:
-        decoded_token = auth.verify_id_token(id_token)
+        # Add clock skew tolerance of 60 seconds to handle minor time differences
+        decoded_token = auth.verify_id_token(id_token, clock_skew_seconds=60)
         return decoded_token
     except Exception as e:
         print(f"Error verifying ID token: {e}")
@@ -174,6 +175,10 @@ def create_vacante(empresa_doc_id, vacante_data):
         doc_ref = vacantes_ref.document()
 
         # Prepare the data with empresa reference
+        correoEmpresa = vacante_data.get("correoEmpresa", "")
+        print(f"DEBUG - correoEmpresa from vacante_data: '{correoEmpresa}'")
+        print(f"DEBUG - Full vacante_data keys: {vacante_data.keys()}")
+
         data = {
             "empresaId": empresa_ref,
             "titulo": vacante_data.get("titulo", ""),
@@ -189,11 +194,13 @@ def create_vacante(empresa_doc_id, vacante_data):
             "habilidadesDuras": vacante_data.get("habilidadesDuras", []),
             "idiomas": vacante_data.get("idiomas", []),
             "nombreEmpresa": vacante_data.get("nombreEmpresa", ""),
+            "correoEmpresa": correoEmpresa,
             "activa": True,
             "created_at": firestore.SERVER_TIMESTAMP,
             "updated_at": firestore.SERVER_TIMESTAMP,
         }
 
+        print(f"DEBUG - Data to be saved to Firestore: {data}")
         doc_ref.set(data)
 
         print(f"New vacante created with ID: {doc_ref.id}")

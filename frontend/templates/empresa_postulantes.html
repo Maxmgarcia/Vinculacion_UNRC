@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postulantes - {{ vacante.titulo }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/empresa_dashboard.css') }}">
+    <style>
+        .postulantes-container {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .postulante-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.3s;
+        }
+
+        .postulante-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .postulante-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .postulante-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #235B4E;
+        }
+
+        .postulante-email {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .postulante-date {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        .postulante-mensaje {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            line-height: 1.6;
+        }
+
+        .no-postulantes {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+
+        .vacante-info {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .vacante-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: #235B4E;
+        }
+
+        .postulantes-count {
+            font-size: 1.1rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-content">
+            <a href="{{ url_for('empresa_dashboard') }}" class="nav-brand">Portal de Empresas</a>
+            <div class="nav-links">
+                <a href="{{ url_for('empresa_datos') }}" class="nav-link">Mis Datos</a>
+                <a href="{{ url_for('logout') }}" class="nav-link">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Postulantes</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('empresa_dashboard') }}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Volver al Dashboard
+                </a>
+            </div>
+        </header>
+
+        <div class="vacante-info">
+            <h2>{{ vacante.titulo }}</h2>
+            <p>{{ vacante.descripcion or 'Sin descripción' }}</p>
+            <p class="postulantes-count" id="postulantes-count">Cargando postulantes...</p>
+        </div>
+
+        <div class="postulantes-container">
+            <div id="postulantes-list" class="loading">
+                Cargando postulantes...
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        const firebaseConfig = {{ firebase_config | tojson }};
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const vacanteId = "{{ vacante_id }}";
+        const postulantesListContainer = document.getElementById("postulantes-list");
+        const postulantesCountContainer = document.getElementById("postulantes-count");
+
+        async function cargarPostulantes() {
+            try {
+                console.log("Cargando postulantes para vacante:", vacanteId);
+
+                // Create reference to the vacante
+                const vacanteRef = doc(db, "vacantes", vacanteId);
+                console.log("Referencia de vacante creada:", vacanteRef);
+
+                // Query postulaciones where vacanteID matches
+                console.log("Ejecutando query...");
+                const q = query(collection(db, "postulaciones"), where("vacanteID", "==", vacanteRef));
+                const querySnapshot = await getDocs(q);
+                console.log("Query ejecutado, documentos encontrados:", querySnapshot.size);
+
+                if (querySnapshot.empty) {
+                    postulantesListContainer.innerHTML = `
+                        <div class="no-postulantes">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.3;">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <h3>No hay postulantes aún</h3>
+                            <p>Esta vacante aún no ha recibido postulaciones.</p>
+                        </div>
+                    `;
+                    postulantesCountContainer.textContent = "0 postulantes";
+                    return;
+                }
+
+                // Build the postulantes list
+                const postulantes = [];
+                querySnapshot.forEach((doc) => {
+                    postulantes.push(doc.data());
+                });
+
+                // Sort by date (most recent first)
+                postulantes.sort((a, b) => {
+                    const dateA = a.fechaPostulacion?.toDate() || new Date(0);
+                    const dateB = b.fechaPostulacion?.toDate() || new Date(0);
+                    return dateB - dateA;
+                });
+
+                // Update count
+                postulantesCountContainer.textContent = `${postulantes.length} postulante${postulantes.length !== 1 ? 's' : ''}`;
+
+                // Render postulantes
+                postulantesListContainer.innerHTML = postulantes.map(postulante => {
+                    const fecha = postulante.fechaPostulacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Fecha desconocida';
+
+                    return `
+                        <div class="postulante-card">
+                            <div class="postulante-header">
+                                <div>
+                                    <div class="postulante-name">${postulante.nombreAlumno || 'Nombre no disponible'}</div>
+                                    <div class="postulante-email">${postulante.correoAlumno || 'Email no disponible'}</div>
+                                </div>
+                                <div class="postulante-date">${fechaStr}</div>
+                            </div>
+                            ${postulante.mensaje ? `
+                                <div class="postulante-mensaje">
+                                    <strong>Mensaje:</strong><br>
+                                    ${postulante.mensaje}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error("Error cargando postulantes:", error);
+                postulantesListContainer.innerHTML = `
+                    <div class="no-postulantes">
+                        <h3>Error al cargar postulantes</h3>
+                        <p>Ocurrió un error al cargar la lista de postulantes. Por favor, intenta nuevamente.</p>
+                    </div>
+                `;
+            }
+        }
+
+        cargarPostulantes();
+    </script>
+</body>
+</html>

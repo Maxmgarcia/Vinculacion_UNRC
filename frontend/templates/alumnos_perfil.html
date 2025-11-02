@@ -129,6 +129,17 @@
 
         <!-- Contenido principal -->
         <main class="dashboard-main">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
             <div class="dashboard-content">
                 <div class="form-container">
                     <h2>Datos del Alumno</h2>
@@ -136,64 +147,64 @@
 
                         <div class="form-group">
                             <label for="nombre">Nombre</label>
-                            <input type="text" id="nombre" name="nombre" required>
+                            <input type="text" id="nombre" name="nombre" value="{{ alumno.nombre or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="edad">Edad</label>
-                            <input type="number" id="edad" name="edad" required>
+                            <input type="number" id="edad" name="edad" value="{{ alumno.edad or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="estatus">Estatus escolar</label>
                             <select id="estatus" name="estatus" required>
                                 <option value="">Seleccione...</option>
-                                <option value="Activo">Activo</option>
-                                <option value="Inactivo">Inactivo</option>
+                                <option value="Activo" {% if alumno.estatus == "Activo" %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if alumno.estatus == "Inactivo" %}selected{% endif %}>Inactivo</option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label for="semestre">Semestre (activo)</label>
-                            <input type="text" id="semestre" name="semestre" placeholder="Ej. 5°" required>
+                            <input type="text" id="semestre" name="semestre" placeholder="Ej. 5°" value="{{ alumno.semestre or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="promedio">Promedio general</label>
-                            <input type="number" step="0.01" id="promedio" name="promedio" required>
+                            <input type="number" step="0.01" id="promedio" name="promedio" value="{{ alumno.promedio or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="area1">Área de interés 1</label>
-                            <input type="text" id="area1" name="area1" required>
+                            <input type="text" id="area1" name="area1" value="{{ alumno.area1 or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="area2">Área de interés 2</label>
-                            <input type="text" id="area2" name="area2" required>
+                            <input type="text" id="area2" name="area2" value="{{ alumno.area2 or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="area3">Área de interés 3</label>
-                            <input type="text" id="area3" name="area3" required>
+                            <input type="text" id="area3" name="area3" value="{{ alumno.area3 or '' }}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="habilidades_tecnicas">Habilidades técnicas</label>
                             <textarea id="habilidades_tecnicas" name="habilidades_tecnicas"
-                                placeholder="Ej. Python, SQL, Excel..." required></textarea>
+                                placeholder="Ej. Python, SQL, Excel..." required>{{ alumno.habilidades_tecnicas or '' }}</textarea>
                         </div>
 
                         <div class="form-group">
                             <label for="habilidades_blandas">Habilidades blandas</label>
                             <textarea id="habilidades_blandas" name="habilidades_blandas"
-                                placeholder="Ej. Comunicación, trabajo en equipo..." required></textarea>
+                                placeholder="Ej. Comunicación, trabajo en equipo..." required>{{ alumno.habilidades_blandas or '' }}</textarea>
                         </div>
 
                         <div class="form-group">
                             <label for="idiomas">Idiomas</label>
                             <input type="text" id="idiomas" name="idiomas" placeholder="Ej. Español, Inglés (B2)"
-                                required>
+                                value="{{ alumno.idiomas or '' }}" required>
                         </div>
 
                         <div class="form-actions">

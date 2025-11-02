@@ -273,9 +273,10 @@
       position: fixed;
       top: 80px; /* Debajo del header */
       right: 20px;
-      background-color: var(--primary-red);
+      background-color: #dc3545;
       color: var(--white);
       padding: 1rem 1.5rem;
+      padding-right: 3rem;
       border-radius: 8px;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
       z-index: 1050;
@@ -283,12 +284,50 @@
       visibility: hidden;
       transform: translateX(100%);
       transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      max-width: 400px;
+      font-size: 0.95rem;
+    }
+
+    .toast-notification.success {
+      background: linear-gradient(135deg, var(--primary-green), var(--secondary-teal));
+    }
+
+    .toast-notification.error {
+      background-color: #dc3545;
     }
 
     .toast-notification.show {
       opacity: 1;
       visibility: visible;
       transform: translateX(0);
+    }
+
+    .toast-close-btn {
+      position: absolute;
+      top: 50%;
+      right: 1rem;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .toast-close-btn:hover {
+      opacity: 1;
     }
   </style>
 </head>
@@ -370,7 +409,7 @@
   <script type="module">
     // Firebase SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, getDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
     // Inicializa Firebase con la configuración del backend
     const firebaseConfig = {{ firebase_config| tojson }};
@@ -380,6 +419,32 @@
     const vacantesContainer = document.getElementById("vacantes");
     const toastContainer = document.getElementById("toast-container");
     let todasLasVacantes = {}; // Objeto para guardar los datos de todas las vacantes
+    let postulacionesAlumno = new Set(); // Set to store vacante IDs the alumno has applied to
+
+    const alumnoDocId = "{{ alumno.doc_id if alumno and alumno.doc_id else '' }}";
+
+    // Load alumno's postulations to check which vacantes they've applied to
+    async function cargarPostulacionesAlumno() {
+      if (!alumnoDocId) return;
+
+      try {
+        const alumnoRef = doc(db, "alumnos", alumnoDocId);
+        const q = query(collection(db, "postulaciones"), where("alumnoID", "==", alumnoRef));
+        const querySnapshot = await getDocs(q);
+
+        postulacionesAlumno.clear();
+        querySnapshot.forEach((doc) => {
+          const postulacion = doc.data();
+          if (postulacion.vacanteID && postulacion.vacanteID.id) {
+            postulacionesAlumno.add(postulacion.vacanteID.id);
+          }
+        });
+
+        console.log("Vacantes ya postuladas:", Array.from(postulacionesAlumno));
+      } catch (error) {
+        console.error("Error cargando postulaciones del alumno:", error);
+      }
+    }
 
     // Cargar vacantes desde Firestore
     async function cargarVacantes() {
@@ -459,11 +524,18 @@
         habilidadesContainer.innerHTML += `<li class="habilidad-tag">${i}</li>`;
       });
 
-      // Añadir botón de postularse
+      // Añadir botón de postularse o mensaje de ya postulado
       const modalActions = document.querySelector('#modalDetalles .modal-actions');
+      const yaPostulado = postulacionesAlumno.has(id);
+
       {% if alumno and alumno.nombre %}
-        // Si el perfil está completo, muestra el botón para postularse
-        modalActions.innerHTML = `<button class="postular-btn" onclick="intentarPostular('${id}')">Postularme</button>`;
+        if (yaPostulado) {
+          // Si ya se postuló, mostrar mensaje
+          modalActions.innerHTML = `<p style="color: var(--secondary-teal); font-weight: bold;">✓ Ya te has postulado a esta vacante</p>`;
+        } else {
+          // Si el perfil está completo y no se ha postulado, muestra el botón
+          modalActions.innerHTML = `<button class="postular-btn" onclick="intentarPostular('${id}')">Postularme</button>`;
+        }
       {% else %}
         // Si el perfil está incompleto, muestra un botón para ir a completarlo
         modalActions.innerHTML = `<a href="{{ url_for('alumnos_perfil') }}" class="postular-btn">Completar Perfil</a>`;
@@ -484,22 +556,43 @@
     // --- Funciones para el Modal de Postulación ---
 
     // Función para mostrar notificaciones Toast
-    function showToast(message) {
+    function showToast(message, type = 'error', duration = 5000) {
       const toast = document.createElement("div");
-      toast.className = "toast-notification";
-      toast.textContent = message;
+      toast.className = `toast-notification ${type}`;
+
+      // Create toast content with message and close button
+      const messageSpan = document.createElement("span");
+      messageSpan.textContent = message;
+
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "toast-close-btn";
+      closeBtn.innerHTML = "×";
+      closeBtn.setAttribute("aria-label", "Cerrar");
+
+      toast.appendChild(messageSpan);
+      toast.appendChild(closeBtn);
       toastContainer.appendChild(toast);
+
+      // Function to close the toast
+      const closeToast = () => {
+        toast.classList.remove("show");
+        toast.addEventListener('transitionend', () => toast.remove());
+      };
+
+      // Close button click handler
+      closeBtn.onclick = closeToast;
 
       // Mostrar el toast
       setTimeout(() => {
         toast.classList.add("show");
       }, 100);
 
-      // Ocultar y eliminar el toast después de 4 segundos
-      setTimeout(() => {
-        toast.classList.remove("show");
-        toast.addEventListener('transitionend', () => toast.remove());
-      }, 4000);
+      // Auto-close after duration
+      if (duration > 0) {
+        setTimeout(closeToast, duration);
+      }
+
+      return closeToast; // Return the close function
     }
     // Nueva función para validar el perfil antes de postular
     window.intentarPostular = function(id) {
@@ -544,30 +637,135 @@
       const correo = document.getElementById("correoAlumno").value.trim();
       const mensaje = document.getElementById("mensajeAlumno").value.trim();
 
+      console.log("=== INICIO DE POSTULACIÓN ===");
+      console.log("VacanteId:", vacanteId);
+      console.log("Nombre:", nombre);
+      console.log("Correo:", correo);
+
       if (!nombre || !correo.includes("@") || !mensaje) {
         alert("Por favor completa todos los campos correctamente.");
         return;
       }
 
       try {
-        await addDoc(collection(db, "postulaciones"), {
-          vacanteId,
-          nombre,
-          correo,
-          mensaje,
-          fecha: new Date()
-        });
+        // Get vacante data to extract empresa information
+        const vacante = todasLasVacantes[vacanteId];
+        console.log("Vacante encontrada:", vacante);
 
-        alert(" Tu postulación se ha enviado correctamente.");
+        if (!vacante) {
+          alert("Error: No se encontró la información de la vacante.");
+          return;
+        }
+
+        // Get empresa ID and correo from vacante or empresa document
+        let empresaID = "";
+        let correoEmpresa = vacante.correoEmpresa || ""; // First, check if vacante has correoEmpresa
+        let nombreEmpresa = vacante.nombreEmpresa || "Empresa no especificada";
+
+        console.log("Vacante completa:", vacante);
+        console.log("correoEmpresa directo de vacante:", vacante.correoEmpresa);
+        console.log("EmpresaId en vacante:", vacante.empresaId);
+
+        if (vacante.empresaId) {
+          try {
+            // Extract empresa ID from reference path
+            if (vacante.empresaId.path) {
+              // Path format is "empresas/DOC_ID"
+              const pathParts = vacante.empresaId.path.split('/');
+              empresaID = pathParts[pathParts.length - 1];
+              console.log("Empresa ID extraído del path:", empresaID);
+            } else if (vacante.empresaId.id) {
+              empresaID = vacante.empresaId.id;
+              console.log("Empresa ID extraído directamente:", empresaID);
+            }
+
+            // If correoEmpresa is not in vacante, fetch it from empresa document
+            if (!correoEmpresa && empresaID) {
+              console.log("correoEmpresa no encontrado en vacante, obteniendo de empresa...");
+              const empresaDoc = await getDoc(vacante.empresaId);
+              console.log("Documento de empresa obtenido, existe?:", empresaDoc.exists());
+
+              if (empresaDoc.exists()) {
+                const empresaData = empresaDoc.data();
+                console.log("Datos de empresa:", empresaData);
+                correoEmpresa = empresaData.correo || "";
+                console.log("correoEmpresa obtenido de empresa document:", correoEmpresa);
+                // Override nombreEmpresa if available in empresa document
+                if (empresaData.nombre) {
+                  nombreEmpresa = empresaData.nombre;
+                }
+              }
+            } else {
+              console.log("correoEmpresa ya existe en vacante:", correoEmpresa);
+            }
+          } catch (empresaError) {
+            console.error("Error al obtener datos de empresa:", empresaError);
+            // Continue with existing correoEmpresa or empty
+          }
+        }
+
+        // Prepare postulation data with new structure
+        const alumnoDocId = "{{ alumno.doc_id if alumno and alumno.doc_id else '' }}";
+
+        // Create DocumentReferences
+        const alumnoRef = alumnoDocId ? doc(db, "alumnos", alumnoDocId) : null;
+        const empresaRef = empresaID ? doc(db, "empresas", empresaID) : null;
+        const vacanteRef = vacanteId ? doc(db, "vacantes", vacanteId) : null;
+
+        const postulacionData = {
+          alumnoID: alumnoRef,
+          correoAlumno: correo || "",
+          correoEmpresa: correoEmpresa || "",
+          empresaID: empresaRef,
+          fechaPostulacion: new Date(),
+          nombreAlumno: nombre || "",
+          nombreEmpresa: nombreEmpresa || "",
+          nombreVacante: vacante.titulo || "",
+          vacanteID: vacanteRef,
+          mensaje: mensaje || ""
+        };
+
+        console.log("Datos de postulación preparados:", postulacionData);
+        console.log("Alumno Reference:", alumnoRef);
+        console.log("Empresa Reference:", empresaRef);
+        console.log("Vacante Reference:", vacanteRef);
+        console.log("Enviando a Firestore...");
+
+        const docRef = await addDoc(collection(db, "postulaciones"), postulacionData);
+        console.log("Documento creado con ID:", docRef.id);
+
+        console.log("✅ Postulación enviada exitosamente!");
+
+        // Add this vacante to the set of postulated vacantes
+        postulacionesAlumno.add(vacanteId);
+
+        // Close modals and reset form
         cerrarModal();
+        cerrarModalDetalles();
         form.reset();
+
+        // Show success notification
+        const closeNotification = showToast("¡Tu postulación se ha enviado correctamente!", "success", 5000);
+
+        // When notification is closed (manually or auto), ensure we're on the vacantes page
+        // The user is already on /alumnos/vacantes, so no redirect needed
+
       } catch (error) {
-        alert(" Error al enviar la postulación. Intenta nuevamente.");
-        console.error(error);
+        console.error("❌ ERROR COMPLETO:", error);
+        console.error("Nombre del error:", error.name);
+        console.error("Mensaje del error:", error.message);
+        console.error("Stack trace:", error.stack);
+        showToast("Error al enviar la postulación. Intenta nuevamente.", "error", 5000);
       }
     });
 
-    cargarVacantes();
+    // Load postulations first, then load vacantes
+    async function inicializar() {
+      await cargarPostulacionesAlumno();
+      await cargarVacantes();
+    }
+
+    inicializar();
   </script>
 </body>
 
