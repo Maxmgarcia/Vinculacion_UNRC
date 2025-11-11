@@ -216,7 +216,7 @@
 
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="areas_interes">Áreas de Interés</label>
-                            <div id="habilidades-areas_interes-container" class="habilidades-container">
+                            <div id="habilidades-areas_interes-container" class="habilidades-container" data-tipo="areas_interes">
                                 <!-- Los inputs se generarán con JS -->
                             </div>
                             <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('areas_interes')">+</button>
@@ -224,18 +224,18 @@
 
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="habilidades_tecnicas">Habilidades técnicas</label>
-                            <div id="habilidades-tecnicas-container" class="habilidades-container">
+                            <div id="habilidades-habilidades_tecnicas-container" class="habilidades-container" data-tipo="habilidades_tecnicas">
                                 <!-- Los inputs se generarán con JS -->
                             </div>
-                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('tecnicas')">+</button>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('habilidades_tecnicas')">+</button>
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="habilidades_blandas">Habilidades blandas</label>
-                            <div id="habilidades-blandas-container" class="habilidades-container">
+                            <div id="habilidades-habilidades_blandas-container" class="habilidades-container" data-tipo="habilidades_blandas">
                                 <!-- Los inputs se generarán con JS -->
                             </div>
-                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('blandas')">+</button>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('habilidades_blandas')">+</button>
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1;">
@@ -261,10 +261,10 @@
             const nuevoInputDiv = document.createElement('div');
             nuevoInputDiv.className = 'habilidad-input-group';
 
-            const nuevoInput = document.createElement('input');
+            const nuevoInput = document.createElement('input');            
             nuevoInput.type = 'text';
-            nuevoInput.name = `habilidades_${tipo}`; // Mismo nombre para que Flask los reciba como lista
-            nuevoInput.value = valor;            
+            nuevoInput.name = tipo; // Nombre corregido para que coincida con el backend
+            nuevoInput.value = valor; // Asigna el valor existente
             nuevoInput.placeholder = `Habilidad ${tipo.slice(0, -1)} #${container.children.length + 1}`;
             nuevoInput.required = true;
 
@@ -293,23 +293,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Renombrar 'habilidades_areas_interes' a 'areas_interes' en el HTML para que coincida con el backend
-            const areasContainer = document.getElementById('habilidades-areas_interes-container');
-            if (areasContainer) {
-                areasContainer.id = 'habilidades-areas_interes-container';
-                const addButton = areasContainer.nextElementSibling;
-                if (addButton) {
-                    addButton.onclick = () => agregarHabilidad('areas_interes');
-                }
-                // Cambiar el nombre de los inputs generados dinámicamente
-                const inputs = areasContainer.querySelectorAll('input');
-                inputs.forEach(input => input.name = 'areas_interes');
-            }
-
             // Inicializar todos los campos dinámicos
             inicializarCamposDinamicos('areas_interes', "{{ alumno.areas_interes or '' }}");
-            inicializarCamposDinamicos('tecnicas', "{{ alumno.habilidades_tecnicas or '' }}");
-            inicializarCamposDinamicos('blandas', "{{ alumno.habilidades_blandas or '' }}");
+            inicializarCamposDinamicos('habilidades_tecnicas', "{{ alumno.habilidades_tecnicas or '' }}");
+            inicializarCamposDinamicos('habilidades_blandas', "{{ alumno.habilidades_blandas or '' }}");
             inicializarCamposDinamicos('idiomas', "{{ alumno.idiomas or '' }}", 1); // Solo un campo de idioma por defecto
         });
 
@@ -320,8 +307,8 @@
         // podemos unir los valores antes de enviar.
         document.querySelector('form').addEventListener('submit', function(e) {
             const form = e.target;
-            ['tecnicas', 'blandas', 'areas_interes', 'idiomas'].forEach(tipo => {
-                const inputs = Array.from(form.querySelectorAll(`input[name="habilidades_${tipo}"]`));
+            ['habilidades_tecnicas', 'habilidades_blandas', 'areas_interes', 'idiomas'].forEach(tipo => {
+                const inputs = Array.from(form.querySelectorAll(`input[name="${tipo}"]`));
                 const valores = inputs.map(input => input.value.trim()).filter(v => v).join(', ');
                 
                 // Puedes crear un input hidden para enviar el string combinado
