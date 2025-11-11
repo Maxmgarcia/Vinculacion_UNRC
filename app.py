@@ -32,6 +32,7 @@ from firebase import (
     update_empresa_subscription,
     get_alumno_by_correo,
     create_alumno,
+    get_postulaciones_by_alumno_id,
     update_alumno,
 )
 
@@ -384,11 +385,41 @@ def alumnos_metricas():
     Muestra el panel de métricas del alumno con sus visualizaciones de perfil,
     aplicaciones y habilidades.
     """
-    return render_template("alumnos_metricas.html")
+    # 1. Proteger la ruta
+    if "user_role" not in session or session.get("user_role") != "alumno":
+        flash("Acceso denegado.", "error")
+        return redirect(url_for("alumnos_login"))
 
+    # 2. Obtener datos del alumno
+    correo_sesion = session.get("user_email")
+    alumno_data = get_alumno_by_correo(correo_sesion)
 
+    if not alumno_data or "doc_id" not in alumno_data:
+        flash("No se pudo encontrar tu perfil para cargar las métricas.", "error")
+        return redirect(url_for("alumnos_dashboard"))
 
-# Empieza la seccion de empresas
+    # 3. Obtener postulaciones
+    alumno_doc_id = alumno_data["doc_id"]
+    postulaciones = get_postulaciones_by_alumno_id(alumno_doc_id)
+
+    # 4. Procesar datos para las gráficas
+    total_postulaciones = len(postulaciones)
+    
+    modalidades_counts = {
+        'Presencial': 0,
+        'Remoto': 0,
+        'Híbrido': 0,
+        'No especificada': 0
+    }
+    for p in postulaciones:
+        modalidad = p.get('modalidad_vacante', 'No especificada')
+        if modalidad in modalidades_counts:
+            modalidades_counts[modalidad] += 1
+        else:
+            modalidades_counts['No especificada'] += 1
+
+    return render_template("alumnos_metricas.html", total_postulaciones=total_postulaciones, modalidades_counts=modalidades_counts)
+
 @app.route("/empresas")
 def empresas():
     # Redirect to login if not authenticated as a company

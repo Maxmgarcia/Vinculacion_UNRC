@@ -408,6 +408,38 @@ def update_empresa_subscription(doc_id, suscripcion_activa):
         print(f"Error updating empresa subscription: {e}")
         return False
 
+def get_postulaciones_by_alumno_id(alumno_doc_id):
+    """
+    Retrieves all postulaciones for a specific alumno, including vacante details.
+    """
+    try:
+        db = firestore.client()
+        postulaciones_ref = db.collection("postulaciones")
+        alumno_ref = db.collection("alumnos").document(alumno_doc_id)
+
+        # Query by alumnoID field
+        query = postulaciones_ref.where("alumnoID", "==", alumno_ref)
+        docs = query.stream()
+
+        postulaciones = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            
+            # Fetch vacante details to get the modalidad
+            vacante_ref = data.get("vacanteID")
+            if vacante_ref:
+                vacante_doc = vacante_ref.get()
+                if vacante_doc.exists:
+                    vacante_data = vacante_doc.to_dict()
+                    # Add modalidad to the postulation data
+                    data['modalidad_vacante'] = vacante_data.get('modalidad', 'No especificada')
+            
+            postulaciones.append(data)
+        return postulaciones
+    except Exception as e:
+        print(f"Error retrieving postulaciones by alumno ID: {e}")
+        return []
 
 def get_alumno_by_correo(correo):
     """
