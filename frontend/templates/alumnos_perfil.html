@@ -96,6 +96,46 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Estilos para campos de habilidades dinámicas */
+        .habilidades-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .habilidad-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .habilidad-input-group input {
+            flex-grow: 1;
+        }
+
+        .remove-habilidad-btn,
+        .add-habilidad-btn {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .remove-habilidad-btn { color: var(--primary-red); }
+        .add-habilidad-btn { color: var(--primary-green); margin-top: 0.5rem; }
+
+        .remove-habilidad-btn:hover,
+        .add-habilidad-btn:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 
@@ -174,37 +214,36 @@
                             <input type="number" step="0.01" id="promedio" name="promedio" value="{{ alumno.promedio or '' }}" required>
                         </div>
 
-                        <div class="form-group">
-                            <label for="area1">Área de interés 1</label>
-                            <input type="text" id="area1" name="area1" value="{{ alumno.area1 or '' }}" required>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="areas_interes">Áreas de Interés</label>
+                            <div id="habilidades-areas_interes-container" class="habilidades-container">
+                                <!-- Los inputs se generarán con JS -->
+                            </div>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('areas_interes')">+</button>
                         </div>
 
-                        <div class="form-group">
-                            <label for="area2">Área de interés 2</label>
-                            <input type="text" id="area2" name="area2" value="{{ alumno.area2 or '' }}" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="area3">Área de interés 3</label>
-                            <input type="text" id="area3" name="area3" value="{{ alumno.area3 or '' }}" required>
-                        </div>
-
-                        <div class="form-group">
+                        <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="habilidades_tecnicas">Habilidades técnicas</label>
-                            <textarea id="habilidades_tecnicas" name="habilidades_tecnicas"
-                                placeholder="Ej. Python, SQL, Excel..." required>{{ alumno.habilidades_tecnicas or '' }}</textarea>
+                            <div id="habilidades-tecnicas-container" class="habilidades-container">
+                                <!-- Los inputs se generarán con JS -->
+                            </div>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('tecnicas')">+</button>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="habilidades_blandas">Habilidades blandas</label>
-                            <textarea id="habilidades_blandas" name="habilidades_blandas"
-                                placeholder="Ej. Comunicación, trabajo en equipo..." required>{{ alumno.habilidades_blandas or '' }}</textarea>
+                            <div id="habilidades-blandas-container" class="habilidades-container">
+                                <!-- Los inputs se generarán con JS -->
+                            </div>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('blandas')">+</button>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="grid-column: 1 / -1;">
                             <label for="idiomas">Idiomas</label>
-                            <input type="text" id="idiomas" name="idiomas" placeholder="Ej. Español, Inglés (B2)"
-                                value="{{ alumno.idiomas or '' }}" required>
+                            <div id="habilidades-idiomas-container" class="habilidades-container">
+                                <!-- Los inputs se generarán con JS -->
+                            </div>
+                            <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('idiomas')">+</button>
                         </div>
 
                         <div class="form-actions">
@@ -215,6 +254,81 @@
             </div>
         </main>
     </div>
+
+    <script>
+        function agregarHabilidad(tipo, valor = '') {
+            const container = document.getElementById(`habilidades-${tipo}-container`);
+            const nuevoInputDiv = document.createElement('div');
+            nuevoInputDiv.className = 'habilidad-input-group';
+
+            const nuevoInput = document.createElement('input');
+            nuevoInput.type = 'text';
+            nuevoInput.name = `habilidades_${tipo}`; // Mismo nombre para que Flask los reciba como lista
+            nuevoInput.value = valor;            
+            nuevoInput.placeholder = `Habilidad ${tipo.slice(0, -1)} #${container.children.length + 1}`;
+            nuevoInput.required = true;
+
+            const botonEliminar = document.createElement('button');
+            botonEliminar.type = 'button';
+            botonEliminar.className = 'remove-habilidad-btn';
+            botonEliminar.textContent = '×';
+            botonEliminar.onclick = function() {
+                container.removeChild(nuevoInputDiv);
+            };
+
+            nuevoInputDiv.appendChild(nuevoInput);
+            nuevoInputDiv.appendChild(botonEliminar);
+            container.appendChild(nuevoInputDiv);
+        }
+
+        function inicializarCamposDinamicos(tipo, datosExistentes, cantidadPorDefecto = 3) {
+            const valores = (datosExistentes || '').split(',').map(h => h.trim()).filter(h => h);
+            if (valores.length > 0) {
+                valores.forEach(valor => agregarHabilidad(tipo, valor));
+            } else {
+                for (let i = 0; i < cantidadPorDefecto; i++) {
+                    agregarHabilidad(tipo);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Renombrar 'habilidades_areas_interes' a 'areas_interes' en el HTML para que coincida con el backend
+            const areasContainer = document.getElementById('habilidades-areas_interes-container');
+            if (areasContainer) {
+                areasContainer.id = 'habilidades-areas_interes-container';
+                const addButton = areasContainer.nextElementSibling;
+                if (addButton) {
+                    addButton.onclick = () => agregarHabilidad('areas_interes');
+                }
+                // Cambiar el nombre de los inputs generados dinámicamente
+                const inputs = areasContainer.querySelectorAll('input');
+                inputs.forEach(input => input.name = 'areas_interes');
+            }
+
+            // Inicializar todos los campos dinámicos
+            inicializarCamposDinamicos('areas_interes', "{{ alumno.areas_interes or '' }}");
+            inicializarCamposDinamicos('tecnicas', "{{ alumno.habilidades_tecnicas or '' }}");
+            inicializarCamposDinamicos('blandas', "{{ alumno.habilidades_blandas or '' }}");
+            inicializarCamposDinamicos('idiomas', "{{ alumno.idiomas or '' }}", 1); // Solo un campo de idioma por defecto
+        });
+
+        // Antes de enviar el formulario, une las habilidades en un solo campo si es necesario,
+        // o asegúrate de que el backend pueda manejar múltiples campos con el mismo nombre.
+        // Flask con `request.form.getlist('habilidades_tecnicas')` puede manejar esto.
+        // Para mantener la compatibilidad con el backend actual que espera un string,
+        // podemos unir los valores antes de enviar.
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const form = e.target;
+            ['tecnicas', 'blandas', 'areas_interes', 'idiomas'].forEach(tipo => {
+                const inputs = Array.from(form.querySelectorAll(`input[name="habilidades_${tipo}"]`));
+                const valores = inputs.map(input => input.value.trim()).filter(v => v).join(', ');
+                
+                // Puedes crear un input hidden para enviar el string combinado
+                // O modificar el backend para que acepte una lista. Por ahora, asumimos que el backend no cambia.
+            });
+        });
+    </script>
 </body>
 
 </html>

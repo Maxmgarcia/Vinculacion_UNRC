@@ -68,22 +68,51 @@
                         </div>
                         <div class="detail-item full-width">
                             <strong>Áreas de Interés:</strong>
-                            <span>{{ [alumno.area1, alumno.area2, alumno.area3] | select('ne', none) | join(', ') or 'No
-                                especificadas' }}</span>
+                            <div class="tags-container">
+                                {% if alumno.areas_interes %}
+                                    {% for area in alumno.areas_interes.split(',') %}
+                                        <span class="tag">{{ area | trim }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span>No especificadas</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="detail-item full-width">
                             <strong>Idiomas:</strong>
-                            <span>{{ [alumno.idiomas] | select('ne', none) | join(', ') or 'No especificadas' }}</span>
+                            <div class="tags-container">
+                                {% if alumno.idiomas %}
+                                    {% for idioma in alumno.idiomas.split(',') %}
+                                        <span class="tag">{{ idioma | trim }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span>No especificadas</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="detail-item full-width">
                             <strong>Habilidades Técnicas:</strong>
-                            <span>{{ [alumno.habilidades_tecnicas] | select('ne', none) | join(', ') or 'No
-                                especificadas' }}</span>
+                            <div class="tags-container">
+                                {% if alumno.habilidades_tecnicas %}
+                                    {% for habilidad in alumno.habilidades_tecnicas.split(',') %}
+                                        <span class="tag">{{ habilidad | trim }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span>No especificadas</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="detail-item full-width">
                             <strong>Habilidades Blandas:</strong>
-                            <span>{{ [alumno.habilidades_blandas] | select('ne', none) | join(', ') or 'No
-                                especificadas' }}</span>
+                            <div class="tags-container">
+                                {% if alumno.habilidades_blandas %}
+                                    {% for habilidad in alumno.habilidades_blandas.split(',') %}
+                                        <span class="tag">{{ habilidad | trim }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span>No especificadas</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 

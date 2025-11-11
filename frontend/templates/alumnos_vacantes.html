@@ -528,17 +528,17 @@
       const modalActions = document.querySelector('#modalDetalles .modal-actions');
       const yaPostulado = postulacionesAlumno.has(id);
 
-      {% if alumno and alumno.nombre %}
+      {% if is_profile_complete %}
         if (yaPostulado) {
           // Si ya se postuló, mostrar mensaje
           modalActions.innerHTML = `<p style="color: var(--secondary-teal); font-weight: bold;">✓ Ya te has postulado a esta vacante</p>`;
         } else {
           // Si el perfil está completo y no se ha postulado, muestra el botón
-          modalActions.innerHTML = `<button class="postular-btn" onclick="intentarPostular('${id}')">Postularme</button>`;
+          modalActions.innerHTML = `<button class="postular-btn" onclick="abrirModal('${id}')">Postularme</button>`;
         }
       {% else %}
         // Si el perfil está incompleto, muestra un botón para ir a completarlo
-        modalActions.innerHTML = `<a href="{{ url_for('alumnos_perfil') }}" class="postular-btn">Completar Perfil</a>`;
+        modalActions.innerHTML = `<a href="{{ url_for('alumnos_perfil') }}" class="postular-btn">Completar Perfil para Postular</a>`;
       {% endif %}
 
       document.getElementById("modalDetalles").style.display = "flex";
@@ -594,16 +594,6 @@
 
       return closeToast; // Return the close function
     }
-    // Nueva función para validar el perfil antes de postular
-    window.intentarPostular = function(id) {
-      {% if alumno and alumno.nombre %}
-        // Si el perfil está completo, abre el modal de postulación
-        abrirModal(id);
-      {% else %}
-        // Si el perfil está incompleto, muestra una notificación toast
-        showToast("Completa tu perfil para poder postularte.");
-      {% endif %}
-    };
     window.abrirModal = function (id) {
       document.getElementById("vacanteId").value = id;
       document.getElementById("modalPostular").style.display = "flex";

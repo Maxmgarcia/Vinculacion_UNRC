@@ -514,3 +514,21 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Estilos para las etiquetas de habilidades en el dashboard */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.tag {
+    background-color: #eef3f1; /* Un gris muy claro, casi blanco */
+    color: var(--primary-green);
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid rgba(35, 91, 78, 0.2);
+}

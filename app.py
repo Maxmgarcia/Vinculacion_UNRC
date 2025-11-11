@@ -200,6 +200,27 @@ def logout():
     return redirect(url_for("home"))
 
 
+def is_alumno_profile_complete(alumno_data):
+    """
+    Verifica si los campos esenciales del perfil de un alumno están completos.
+    """
+    if not alumno_data:
+        return False
+
+    required_fields = [
+        "nombre",
+        "edad",
+        "estatus",
+        "semestre",
+        "promedio",
+        "areas_interes",
+        "habilidades_tecnicas",
+        "habilidades_blandas",
+    ]
+
+    return all(alumno_data.get(field) for field in required_fields)
+
+
 @app.route("/alumnos/perfil", methods=["GET", "POST"])
 def alumnos_perfil():
     # Verificar sesión
@@ -215,19 +236,25 @@ def alumnos_perfil():
             "estatus",
             "semestre",
             "promedio",
-            "area1",
-            "area2",
-            "area3",
-            "habilidades_tecnicas",
-            "habilidades_blandas",
-            "idiomas",
         ]
 
         update_data = {}
         for campo in campos:
             valor = request.form.get(campo, "").strip()
-            if valor:
-                update_data[campo] = valor
+            update_data[campo] = valor
+
+        # Manejar listas de campos dinámicos
+        habilidades_tecnicas = request.form.getlist('habilidades_tecnicas')
+        update_data['habilidades_tecnicas'] = ', '.join(filter(None, [h.strip() for h in habilidades_tecnicas]))
+
+        habilidades_blandas = request.form.getlist('habilidades_blandas')
+        update_data['habilidades_blandas'] = ', '.join(filter(None, [h.strip() for h in habilidades_blandas]))
+
+        areas_interes = request.form.getlist('areas_interes')
+        update_data['areas_interes'] = ', '.join(filter(None, [a.strip() for a in areas_interes]))
+
+        idiomas = request.form.getlist('idiomas')
+        update_data['idiomas'] = ', '.join(filter(None, [i.strip() for i in idiomas]))
 
         # Conversión de tipos
         for campo, tipo in [("edad", int), ("promedio", float)]:
@@ -286,9 +313,7 @@ def alumnos_perfil():
             "estatus",
             "semestre",
             "promedio",
-            "area1",
-            "area2",
-            "area3",
+            "areas_interes",
             "habilidades_tecnicas",
             "habilidades_blandas",
             "idiomas",
@@ -299,6 +324,7 @@ def alumnos_perfil():
     alumno_render_data["doc_id"] = alumno_data.get("doc_id")
 
     return render_template("alumnos_perfil.html", alumno=alumno_render_data)
+
 @app.route('/alumnos/vacantes')
 def alumnos_vacantes():
     # Prepara la configuración de Firebase para el lado del cliente
@@ -315,8 +341,15 @@ def alumnos_vacantes():
     alumno_logueado = None
     if session.get('user_role') == 'alumno' and 'user_email' in session:
         alumno_logueado = get_alumno_by_correo(session['user_email'])
+    
+    # Determinar si el perfil del alumno está completo
+    profile_complete = is_alumno_profile_complete(alumno_logueado)
 
-    return render_template('alumnos_vacantes.html', firebase_config=firebase_config, alumno=alumno_logueado)
+    return render_template(
+        'alumnos_vacantes.html', 
+        firebase_config=firebase_config, 
+        alumno=alumno_logueado,
+        is_profile_complete=profile_complete)
 
 
 # 🔹 (Opcional) Ruta para recibir postulaciones desde el formulario
