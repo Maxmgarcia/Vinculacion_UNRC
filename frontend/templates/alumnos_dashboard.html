@@ -70,11 +70,11 @@
                             <strong>Áreas de Interés:</strong>
                             <div class="tags-container">
                                 {% if alumno.areas_interes %}
-                                    {% for area in alumno.areas_interes.split(',') %}
-                                        <span class="tag">{{ area | trim }}</span>
-                                    {% endfor %}
+                                {% for area in alumno.areas_interes.split(',') %}
+                                <span class="tag">{{ area | trim }}</span>
+                                {% endfor %}
                                 {% else %}
-                                    <span>No especificadas</span>
+                                <span>No especificadas</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -82,11 +82,11 @@
                             <strong>Idiomas:</strong>
                             <div class="tags-container">
                                 {% if alumno.idiomas %}
-                                    {% for idioma in alumno.idiomas.split(',') %}
-                                        <span class="tag">{{ idioma | trim }}</span>
-                                    {% endfor %}
+                                {% for idioma in alumno.idiomas.split(',') %}
+                                <span class="tag">{{ idioma | trim }}</span>
+                                {% endfor %}
                                 {% else %}
-                                    <span>No especificadas</span>
+                                <span>No especificadas</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -94,11 +94,11 @@
                             <strong>Habilidades Técnicas:</strong>
                             <div class="tags-container">
                                 {% if alumno.habilidades_tecnicas %}
-                                    {% for habilidad in alumno.habilidades_tecnicas.split(',') %}
-                                        <span class="tag">{{ habilidad | trim }}</span>
-                                    {% endfor %}
+                                {% for habilidad in alumno.habilidades_tecnicas.split(',') %}
+                                <span class="tag">{{ habilidad | trim }}</span>
+                                {% endfor %}
                                 {% else %}
-                                    <span>No especificadas</span>
+                                <span>No especificadas</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -106,11 +106,11 @@
                             <strong>Habilidades Blandas:</strong>
                             <div class="tags-container">
                                 {% if alumno.habilidades_blandas %}
-                                    {% for habilidad in alumno.habilidades_blandas.split(',') %}
-                                        <span class="tag">{{ habilidad | trim }}</span>
-                                    {% endfor %}
+                                {% for habilidad in alumno.habilidades_blandas.split(',') %}
+                                <span class="tag">{{ habilidad | trim }}</span>
+                                {% endfor %}
                                 {% else %}
-                                    <span>No especificadas</span>
+                                <span>No especificadas</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -125,39 +125,28 @@
 
 
                 <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                                <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                                <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                                <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                                <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <h3>Documentos</h3>
-                        <p>Accede a tus documentos académicos</p>
-                    </div>
-                    <a href='/alumnos/perfil' class="card-link">
+                    <a href="/alumnos/perfil" class="card-link">
                         <div class="feature-card">
                             <div class="feature-icon">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M20 21V19a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor"
-                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" />
-
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                             <h3>Perfil</h3>
                             <p>Gestiona tu información personal</p>
                         </div>
                     </a>
+
                     <a href="/alumnos/metricas" class="card-link">
                         <div class="feature-card">
                             <div class="feature-icon">
@@ -174,58 +163,37 @@
                         </div>
                     </a>
 
-
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
-                                <path
-                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                                    stroke="currentColor" stroke-width="2" />
-                            </svg>
-                        </div>
-                        <h3>Configuración</h3>
-                        <p>Ajusta las preferencias de tu cuenta</p>
-                    </div>
                     <a href="/alumnos/vacantes" class="card-link">
                         <div class="feature-card">
                             <div class="feature-icon">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <!-- Maletín -->
                                     <rect x="3" y="7" width="18" height="13" rx="2" ry="2" stroke="currentColor"
                                         stroke-width="2" />
                                     <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" />
-                                    <!-- Lupa -->
                                     <circle cx="17" cy="17" r="3" stroke="currentColor" stroke-width="2" />
                                     <line x1="20" y1="20" x2="22" y2="22" stroke="currentColor" stroke-width="2"
                                         stroke-linecap="round" />
                                 </svg>
                             </div>
                             <h3>Vacantes</h3>
-                            <p>Consulta y postúlate a las vacantes disponibles</p>
+                            <p>Consulta y postúlate a las vacantes</p>
                         </div>
                     </a>
-
-
                 </div>
-            </div>
-    </div>
-    </main>
-    </div>
 
-    <script>
-        // Auto-hide flash messages
-        setTimeout(function () {
-            const flashMessages = document.querySelectorAll('.flash-message');
-            flashMessages.forEach(function (message) {
-                message.style.opacity = '0';
-                setTimeout(function () {
-                    message.remove();
-                }, 300);
-            });
-        }, 3000);
-    </script>
+                <script>
+                    // Auto-hide flash messages
+                    setTimeout(function () {
+                        const flashMessages = document.querySelectorAll('.flash-message');
+                        flashMessages.forEach(function (message) {
+                            message.style.opacity = '0';
+                            setTimeout(function () {
+                                message.remove();
+                            }, 300);
+                        });
+                    }, 3000);
+                </script>
 </body>
 
 </html>
