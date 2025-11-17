@@ -109,9 +109,15 @@ def update_empresa(doc_id, data):
         return False
 
 
-def get_vacantes_by_empresa_id(empresa_doc_id):
+def get_vacantes_by_empresa_id(empresa_doc_id, include_inactive=False):
     """
     Retrieves all vacantes (job opportunities) for a specific empresa.
+    By default, only returns active vacantes (activa=True).
+
+    Args:
+        empresa_doc_id: The document ID of the empresa
+        include_inactive: If True, returns all vacantes including inactive ones
+
     Returns a list of vacante documents.
     """
     try:
@@ -124,6 +130,11 @@ def get_vacantes_by_empresa_id(empresa_doc_id):
 
         # Query vacantes where empresaId equals the empresa reference
         query = vacantes_ref.where("empresaId", "==", empresa_ref)
+
+        # Filter by active status if needed
+        if not include_inactive:
+            query = query.where("activa", "==", True)
+
         docs = query.stream()
 
         vacantes = []

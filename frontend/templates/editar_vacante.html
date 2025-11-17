@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Vacante</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nueva_vacante.css') }}">
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-content">
+            <div class="nav-brand">
+                <span>Portal de Empresas</span>
+                {% if empresa_header and empresa_header.nombre %}
+                    <span class="empresa-name-separator">•</span>
+                    <span class="empresa-name">{{ empresa_header.nombre }}</span>
+                    {% if empresa_header.suscripcion_activa %}
+                        <span class="verified-badge" title="Suscripción Activa">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                            </svg>
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('empresa_datos') }}" class="nav-link">Mis Datos</a>
+                <a href="{{ url_for('empresa_dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="nav-link">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container">
+        <!-- Header -->
+        <header class="form-header">
+            <h1>Editar Vacante</h1>
+            <p class="form-subtitle">Modifica los datos de la oportunidad laboral</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Form -->
+        <form method="POST" class="vacante-form">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h2 class="section-title">Información Básica</h2>
+
+                <div class="form-group">
+                    <label for="titulo" class="form-label required">Título de la Vacante</label>
+                    <input type="text" id="titulo" name="titulo" class="form-input" required placeholder="Ej: Desarrollador Full Stack" value="{{ vacante.titulo or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea id="descripcion" name="descripcion" class="form-textarea" rows="4" placeholder="Describe las responsabilidades y actividades del puesto...">{{ vacante.descripcion or '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="requisitos" class="form-label">Requisitos</label>
+                    <textarea id="requisitos" name="requisitos" class="form-textarea" rows="4" placeholder="Especifica los requisitos necesarios para el puesto...">{{ vacante.requisitos or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Employment Details Section -->
+            <div class="form-section">
+                <h2 class="section-title">Detalles del Empleo</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modalidad" class="form-label">Modalidad</label>
+                        <select id="modalidad" name="modalidad" class="form-select">
+                            <option value="">Selecciona una modalidad</option>
+                            <option value="Presencial" {% if vacante.modalidad == 'Presencial' %}selected{% endif %}>Presencial</option>
+                            <option value="Remoto" {% if vacante.modalidad == 'Remoto' %}selected{% endif %}>Remoto</option>
+                            <option value="Híbrido" {% if vacante.modalidad == 'Híbrido' %}selected{% endif %}>Híbrido</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipoContrato" class="form-label">Tipo de Contrato</label>
+                        <select id="tipoContrato" name="tipoContrato" class="form-select">
+                            <option value="">Selecciona un tipo</option>
+                            <option value="Tiempo completo" {% if vacante.tipoContrato == 'Tiempo completo' %}selected{% endif %}>Tiempo completo</option>
+                            <option value="Medio tiempo" {% if vacante.tipoContrato == 'Medio tiempo' %}selected{% endif %}>Medio tiempo</option>
+                            <option value="Por proyecto" {% if vacante.tipoContrato == 'Por proyecto' %}selected{% endif %}>Por proyecto</option>
+                            <option value="Temporal" {% if vacante.tipoContrato == 'Temporal' %}selected{% endif %}>Temporal</option>
+                            <option value="Indefinido" {% if vacante.tipoContrato == 'Indefinido' %}selected{% endif %}>Indefinido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="duracion" class="form-label">Duración</label>
+                        <input type="text" id="duracion" name="duracion" class="form-input" placeholder="Ej: 6 meses, Indefinido" value="{{ vacante.duracion or '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="horario" class="form-label">Horario</label>
+                        <input type="text" id="horario" name="horario" class="form-input" placeholder="Ej: 9:00 - 18:00, Flexible" value="{{ vacante.horario or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sueldo" class="form-label">Sueldo (MXN)</label>
+                        <input type="number" id="sueldo" name="sueldo" class="form-input" step="0.01" min="0" placeholder="Ej: 15000.00" value="{{ vacante.sueldo or '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="educacion" class="form-label">Educación Requerida</label>
+                        <select id="educacion" name="educacion" class="form-select">
+                            <option value="">Selecciona el nivel</option>
+                            <option value="Secundaria" {% if vacante.educación == 'Secundaria' %}selected{% endif %}>Secundaria</option>
+                            <option value="Preparatoria" {% if vacante.educación == 'Preparatoria' %}selected{% endif %}>Preparatoria</option>
+                            <option value="Licenciatura" {% if vacante.educación == 'Licenciatura' %}selected{% endif %}>Licenciatura</option>
+                            <option value="Maestría" {% if vacante.educación == 'Maestría' %}selected{% endif %}>Maestría</option>
+                            <option value="Doctorado" {% if vacante.educación == 'Doctorado' %}selected{% endif %}>Doctorado</option>
+                            <option value="No especificado" {% if vacante.educación == 'No especificado' %}selected{% endif %}>No especificado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="experienciaRequerida" class="form-label">Experiencia Requerida</label>
+                    <input type="text" id="experienciaRequerida" name="experienciaRequerida" class="form-input" placeholder="Ej: 2 años en desarrollo web" value="{{ vacante.experienciaRequerida or '' }}">
+                </div>
+            </div>
+
+            <!-- Skills and Languages Section -->
+            <div class="form-section">
+                <h2 class="section-title">Habilidades e Idiomas</h2>
+
+                <div class="form-group">
+                    <label for="habilidadesDuras" class="form-label">Habilidades Duras</label>
+                    <input type="text" id="habilidadesDuras" name="habilidadesDuras" class="form-input" placeholder="Separa cada habilidad con coma. Ej: JavaScript, Python, SQL" value="{% if vacante.habilidadesDuras %}{{ vacante.habilidadesDuras|join(', ') }}{% endif %}">
+                    <span class="form-hint">Ingresa las habilidades separadas por comas</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="idiomas" class="form-label">Idiomas</label>
+                    <input type="text" id="idiomas" name="idiomas" class="form-input" placeholder="Separa cada idioma con coma. Ej: Español, Inglés, Francés" value="{% if vacante.idiomas %}{{ vacante.idiomas|join(', ') }}{% endif %}">
+                    <span class="form-hint">Ingresa los idiomas separados por comas</span>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{{ url_for('empresa_dashboard') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Actualizar datos</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -337,6 +337,33 @@ body {
     color: var(--dark-gray);
 }
 
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-edit,
+.btn-delete {
+    padding: 0.5rem;
+    min-width: auto;
+    background: linear-gradient(135deg, var(--primary-orange), #A67C52);
+    color: white;
+}
+
+.btn-edit:hover,
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(188, 149, 92, 0.3);
+}
+
+.btn-edit svg,
+.btn-delete svg {
+    margin: 0;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;

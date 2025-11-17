@@ -143,15 +143,31 @@
 
                         <!-- Actions -->
                         <div class="vacante-section" style="margin-top: 1rem; border-top: 1px solid #e0e0e0; padding-top: 1rem;">
-                            <a href="{{ url_for('empresa_vacante_postulantes', vacante_id=vacante.id) }}" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                Ver Postulantes: {{ vacante.postulaciones_count }}
-                            </a>
+                            <div class="action-buttons">
+                                <a href="{{ url_for('empresa_vacante_postulantes', vacante_id=vacante.id) }}" class="btn btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    Ver Postulantes: {{ vacante.postulaciones_count }}
+                                </a>
+                                <a href="{{ url_for('editar_vacante', vacante_id=vacante.id) }}" class="btn btn-edit" title="Editar vacante">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </a>
+                                <button onclick="eliminarVacante('{{ vacante.id }}')" class="btn btn-delete" title="Eliminar vacante">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </article>
                 {% endfor %}
@@ -166,5 +182,44 @@
             </div>
         {% endif %}
     </div>
+
+    <script>
+        function eliminarVacante(vacanteId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta vacante? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            fetch(`/empresas/eliminar-vacante/${vacanteId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the card from the DOM with a fade-out effect
+                    const card = document.querySelector(`button[onclick="eliminarVacante('${vacanteId}')"]`).closest('.vacante-card');
+                    card.style.transition = 'opacity 0.3s ease-out';
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        // Update the vacancy count
+                        const countElement = document.querySelector('.vacancy-count');
+                        if (countElement) {
+                            const currentCount = parseInt(countElement.textContent.match(/\d+/)[0]);
+                            countElement.textContent = `(${currentCount - 1})`;
+                        }
+                    }, 300);
+                } else {
+                    alert('Error al eliminar la vacante: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar la vacante. Por favor, intenta de nuevo.');
+            });
+        }
+    </script>
 </body>
 </html>

@@ -859,6 +859,128 @@ def nueva_vacante():
     return render_template("nueva_vacante.html", empresa=empresa, empresa_header=empresa_header_data)
 
 
+@app.route("/empresas/editar-vacante/<vacante_id>", methods=["GET", "POST"])
+def editar_vacante(vacante_id):
+    # Check if user is authenticated as empresa
+    if "user_email" not in session or session.get("user_role") != "empresa":
+        return redirect(url_for("empresas_login"))
+
+    # Get empresa document ID from session
+    doc_id = session.get("empresa_doc_id")
+    correo = session["user_email"]
+    empresa = get_empresa_by_correo(correo)
+
+    if not doc_id:
+        if empresa:
+            doc_id = empresa["doc_id"]
+            session["empresa_doc_id"] = doc_id
+        else:
+            flash("Error: No se encontró la empresa.", "error")
+            return redirect(url_for("empresa_datos"))
+
+    # Verify this vacante belongs to the empresa
+    if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
+        flash("No tienes permiso para editar esta vacante.", "error")
+        return redirect(url_for("empresa_dashboard"))
+
+    # Get vacante details
+    vacante = get_vacante_by_id(vacante_id)
+    if not vacante:
+        flash("Vacante no encontrada.", "error")
+        return redirect(url_for("empresa_dashboard"))
+
+    if request.method == "POST":
+        # Collect form data
+        vacante_data = {
+            "titulo": request.form.get("titulo", "").strip(),
+            "descripcion": request.form.get("descripcion", "").strip(),
+            "requisitos": request.form.get("requisitos", "").strip(),
+            "modalidad": request.form.get("modalidad", "").strip(),
+            "tipoContrato": request.form.get("tipoContrato", "").strip(),
+            "duracion": request.form.get("duracion", "").strip(),
+            "horario": request.form.get("horario", "").strip(),
+            "educación": request.form.get("educacion", "").strip(),
+            "experienciaRequerida": request.form.get(
+                "experienciaRequerida", ""
+            ).strip(),
+        }
+
+        # Handle sueldo (number)
+        sueldo_str = request.form.get("sueldo", "").strip()
+        if sueldo_str:
+            try:
+                vacante_data["sueldo"] = float(sueldo_str)
+            except ValueError:
+                vacante_data["sueldo"] = None
+        else:
+            vacante_data["sueldo"] = None
+
+        # Handle arrays: habilidadesDuras and idiomas
+        habilidades_str = request.form.get("habilidadesDuras", "").strip()
+        if habilidades_str:
+            vacante_data["habilidadesDuras"] = [
+                h.strip() for h in habilidades_str.split(",") if h.strip()
+            ]
+        else:
+            vacante_data["habilidadesDuras"] = []
+
+        idiomas_str = request.form.get("idiomas", "").strip()
+        if idiomas_str:
+            vacante_data["idiomas"] = [
+                i.strip() for i in idiomas_str.split(",") if i.strip()
+            ]
+        else:
+            vacante_data["idiomas"] = []
+
+        # Validate required fields
+        if not vacante_data["titulo"]:
+            flash("El título de la vacante es obligatorio.", "error")
+        else:
+            # Update the vacante
+            if update_vacante(vacante_id, vacante_data):
+                flash("Vacante actualizada exitosamente.", "success")
+                return redirect(url_for("empresa_dashboard"))
+            else:
+                flash("Error al actualizar la vacante. Inténtalo de nuevo.", "error")
+
+    # Prepare empresa data for template
+    empresa_header_data = {
+        "nombre": empresa.get("nombre") if empresa else None,
+        "suscripcion_activa": empresa.get("suscripcionActiva", False) if empresa else False,
+    }
+
+    return render_template("editar_vacante.html", vacante=vacante, empresa_header=empresa_header_data)
+
+
+@app.route("/empresas/eliminar-vacante/<vacante_id>", methods=["POST"])
+def eliminar_vacante(vacante_id):
+    # Check if user is authenticated as empresa
+    if "user_email" not in session or session.get("user_role") != "empresa":
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    # Get empresa document ID from session
+    doc_id = session.get("empresa_doc_id")
+
+    if not doc_id:
+        correo = session["user_email"]
+        empresa = get_empresa_by_correo(correo)
+        if empresa:
+            doc_id = empresa["doc_id"]
+            session["empresa_doc_id"] = doc_id
+        else:
+            return jsonify({"success": False, "error": "Empresa not found"}), 404
+
+    # Verify this vacante belongs to the empresa
+    if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
+        return jsonify({"success": False, "error": "Permission denied"}), 403
+
+    # Soft delete: set activa to False
+    if update_vacante(vacante_id, {"activa": False}):
+        return jsonify({"success": True, "message": "Vacante eliminada exitosamente"}), 200
+    else:
+        return jsonify({"success": False, "error": "Failed to delete vacante"}), 500
+
+
 # ==================== REST API ENDPOINTS ====================
 
 from functools import wraps
