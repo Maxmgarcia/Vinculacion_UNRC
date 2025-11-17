@@ -34,6 +34,7 @@ from firebase import (
     create_alumno,
     get_postulaciones_by_alumno_id,
     update_alumno,
+    count_postulaciones_by_vacante_id,
 )
 
 app = Flask(
@@ -489,8 +490,21 @@ def empresas_google_login():
         session["user_name"] = user_info.get("name", user_info["email"])
         session["user_role"] = "empresa"
 
-        # Redirect to empresa_datos for upsert
-        return jsonify({"success": True, "redirectUrl": url_for("empresa_datos")})
+        # Check if empresa exists, create if not
+        correo = user_info["email"]
+        empresa = get_empresa_by_correo(correo)
+
+        if not empresa:
+            # Create new empresa document
+            doc_id = create_empresa(correo)
+            if doc_id:
+                session["empresa_doc_id"] = doc_id
+        else:
+            # Store existing empresa doc_id in session
+            session["empresa_doc_id"] = empresa["doc_id"]
+
+        # Redirect to empresa_dashboard
+        return jsonify({"success": True, "redirectUrl": url_for("empresa_dashboard")})
     else:
         return jsonify({"success": False, "error": "Invalid ID token."}), 401
 
@@ -514,8 +528,21 @@ def empresas_facebook_login():
         session["user_name"] = user_info.get("name", user_info["email"])
         session["user_role"] = "empresa"
 
-        # Redirect to empresa_datos for upsert
-        return jsonify({"success": True, "redirectUrl": url_for("empresa_datos")})
+        # Check if empresa exists, create if not
+        correo = user_info["email"]
+        empresa = get_empresa_by_correo(correo)
+
+        if not empresa:
+            # Create new empresa document
+            doc_id = create_empresa(correo)
+            if doc_id:
+                session["empresa_doc_id"] = doc_id
+        else:
+            # Store existing empresa doc_id in session
+            session["empresa_doc_id"] = empresa["doc_id"]
+
+        # Redirect to empresa_dashboard
+        return jsonify({"success": True, "redirectUrl": url_for("empresa_dashboard")})
     else:
         return jsonify({"success": False, "error": "Invalid ID token."}), 401
 
@@ -617,10 +644,24 @@ def empresa_dashboard():
             )
             return redirect(url_for("empresa_datos"))
 
+    # Get empresa data
+    correo = session["user_email"]
+    empresa = get_empresa_by_correo(correo)
+
     # Get all vacantes for this empresa
     vacantes = get_vacantes_by_empresa_id(doc_id)
 
-    return render_template("empresa_dashboard.html", vacantes=vacantes)
+    # Add postulaciones count to each vacante
+    for vacante in vacantes:
+        vacante['postulaciones_count'] = count_postulaciones_by_vacante_id(vacante['id'])
+
+    # Prepare empresa data for template
+    empresa_data = {
+        "nombre": empresa.get("nombre") if empresa else None,
+        "suscripcion_activa": empresa.get("suscripcionActiva", False) if empresa else False,
+    }
+
+    return render_template("empresa_dashboard.html", vacantes=vacantes, empresa=empresa_data)
 
 
 @app.route("/admin/dashboard")
@@ -673,9 +714,10 @@ def empresa_vacante_postulantes(vacante_id):
 
     # Get empresa document ID from session
     doc_id = session.get("empresa_doc_id")
+    correo = session["user_email"]
+    empresa = get_empresa_by_correo(correo)
+
     if not doc_id:
-        correo = session["user_email"]
-        empresa = get_empresa_by_correo(correo)
         if empresa:
             doc_id = empresa["doc_id"]
             session["empresa_doc_id"] = doc_id
@@ -705,11 +747,18 @@ def empresa_vacante_postulantes(vacante_id):
         "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID"),
     }
 
+    # Prepare empresa data for template
+    empresa_data = {
+        "nombre": empresa.get("nombre") if empresa else None,
+        "suscripcion_activa": empresa.get("suscripcionActiva", False) if empresa else False,
+    }
+
     return render_template(
         "empresa_postulantes.html",
         vacante=vacante,
         vacante_id=vacante_id,
-        firebase_config=firebase_config
+        firebase_config=firebase_config,
+        empresa=empresa_data
     )
 
 
@@ -801,7 +850,13 @@ def nueva_vacante():
             else:
                 flash("Error al crear la vacante. Inténtalo de nuevo.", "error")
 
-    return render_template("nueva_vacante.html", empresa=empresa)
+    # Prepare empresa data for template (pass full empresa object for form data, but format for header)
+    empresa_header_data = {
+        "nombre": empresa.get("nombre") if empresa else None,
+        "suscripcion_activa": empresa.get("suscripcionActiva", False) if empresa else False,
+    }
+
+    return render_template("nueva_vacante.html", empresa=empresa, empresa_header=empresa_header_data)
 
 
 # ==================== REST API ENDPOINTS ====================

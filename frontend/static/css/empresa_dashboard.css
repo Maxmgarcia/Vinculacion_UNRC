@@ -50,6 +50,35 @@ body {
     font-size: 1.25rem;
     font-weight: 600;
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.empresa-name-separator {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 300;
+}
+
+.empresa-name {
+    font-weight: 500;
+    color: var(--primary-orange);
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    color: #C0C0C0;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 2px rgba(192, 192, 192, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 6px rgba(192, 192, 192, 0.8));
+    }
 }
 
 .nav-links {
@@ -200,8 +229,15 @@ body {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--primary-red);
-    margin: 0 0 0.75rem 0;
+    margin: 0 0 0.25rem 0;
     line-height: 1.3;
+}
+
+.vacante-created-date {
+    font-size: 0.85rem;
+    color: #999;
+    margin: 0 0 0.75rem 0;
+    font-weight: 400;
 }
 
 .vacante-meta-item {

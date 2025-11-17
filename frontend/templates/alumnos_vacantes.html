@@ -98,7 +98,26 @@
     }
 
     .vacante-card .empresa-nombre {
+      margin-bottom: 0.25rem;
+    }
+
+    .vacante-card .fecha-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0;
       margin-bottom: 0.5rem;
+      color: #999;
+      font-size: 0.85rem;
+    }
+
+    .vacante-card .fecha-creacion {
+      margin: 0;
+    }
+
+    .vacante-card .postulado-badge {
+      margin: 0;
+      font-weight: 500;
     }
 
     .vacante-card .card-actions {
@@ -462,10 +481,29 @@
           todasLasVacantes[doc.id] = v; // Guardar datos completos
           const card = document.createElement("div");
           card.classList.add("vacante-card");
+
+          // Format creation date
+          let fechaCreacion = "Fecha no disponible";
+          if (v.created_at) {
+            const fecha = v.created_at.toDate();
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            fechaCreacion = `Creada: ${year}/${month}/${day}`;
+          }
+
+          // Check if already applied
+          const yaPostulado = postulacionesAlumno.has(doc.id);
+          const postuladoBadge = yaPostulado ? '<span class="postulado-badge">Postulado ✓</span>' : '';
+
           // Nueva estructura de la tarjeta con iconos y mejor layout
           card.innerHTML = `
             <h3>${v.titulo || "Título no disponible"}</h3>
             <p class="empresa-nombre">${v.nombreEmpresa || "Empresa no especificada"}</p>
+            <div class="fecha-info">
+              <span class="fecha-creacion">${fechaCreacion}</span>
+              ${postuladoBadge}
+            </div>
 
             <div class="vacante-meta">
               <div class="meta-item">

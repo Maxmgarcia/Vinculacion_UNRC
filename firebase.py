@@ -441,6 +441,26 @@ def get_postulaciones_by_alumno_id(alumno_doc_id):
         print(f"Error retrieving postulaciones by alumno ID: {e}")
         return []
 
+def count_postulaciones_by_vacante_id(vacante_id):
+    """
+    Counts the number of postulaciones for a specific vacante.
+    """
+    try:
+        db = firestore.client()
+        postulaciones_ref = db.collection("postulaciones")
+        vacante_ref = db.collection("vacantes").document(vacante_id)
+
+        # Query by vacanteID field
+        query = postulaciones_ref.where("vacanteID", "==", vacante_ref)
+        docs = query.stream()
+
+        # Count documents
+        count = sum(1 for _ in docs)
+        return count
+    except Exception as e:
+        print(f"Error counting postulaciones by vacante ID: {e}")
+        return 0
+
 def get_alumno_by_correo(correo):
     """
     Retrieves alumno document by correo (email).

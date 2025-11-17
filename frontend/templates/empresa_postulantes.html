@@ -36,6 +36,25 @@
             font-size: 1.25rem;
             font-weight: bold;
             color: #235B4E;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .postulante-name:hover {
+            color: #009268;
+        }
+
+        .expand-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
         }
 
         .postulante-email {
@@ -54,6 +73,80 @@
             border-radius: 6px;
             margin-top: 1rem;
             line-height: 1.6;
+        }
+
+        .alumno-profile {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .alumno-profile.expanded {
+            max-height: 1000px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        .profile-section {
+            background: #f9f9f9;
+            border-left: 3px solid #235B4E;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .profile-section h4 {
+            color: #235B4E;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .profile-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-value {
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .skill-tag {
+            background: #235B4E;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .loading-profile {
+            text-align: center;
+            padding: 1rem;
+            color: #999;
+            font-style: italic;
         }
 
         .no-postulantes {
@@ -91,7 +184,20 @@
 <body>
     <nav class="main-nav">
         <div class="nav-content">
-            <a href="{{ url_for('empresa_dashboard') }}" class="nav-brand">Portal de Empresas</a>
+            <div class="nav-brand">
+                <span>Portal de Empresas</span>
+                {% if empresa and empresa.nombre %}
+                    <span class="empresa-name-separator">•</span>
+                    <span class="empresa-name">{{ empresa.nombre }}</span>
+                    {% if empresa.suscripcion_activa %}
+                        <span class="verified-badge" title="Suscripción Activa">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                            </svg>
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
             <div class="nav-links">
                 <a href="{{ url_for('empresa_datos') }}" class="nav-link">Mis Datos</a>
                 <a href="{{ url_for('logout') }}" class="nav-link">Cerrar Sesión</a>
@@ -127,7 +233,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, doc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
         const firebaseConfig = {{ firebase_config | tojson }};
         const app = initializeApp(firebaseConfig);
@@ -185,7 +291,7 @@
                 postulantesCountContainer.textContent = `${postulantes.length} postulante${postulantes.length !== 1 ? 's' : ''}`;
 
                 // Render postulantes
-                postulantesListContainer.innerHTML = postulantes.map(postulante => {
+                postulantesListContainer.innerHTML = postulantes.map((postulante, index) => {
                     const fecha = postulante.fechaPostulacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleDateString('es-MX', {
                         year: 'numeric',
@@ -195,11 +301,16 @@
                         minute: '2-digit'
                     }) : 'Fecha desconocida';
 
+                    const alumnoId = postulante.alumnoID?.id || null;
+
                     return `
-                        <div class="postulante-card">
+                        <div class="postulante-card" data-index="${index}">
                             <div class="postulante-header">
                                 <div>
-                                    <div class="postulante-name">${postulante.nombreAlumno || 'Nombre no disponible'}</div>
+                                    <div class="postulante-name" onclick="toggleProfile('${alumnoId}', ${index})" data-alumno-id="${alumnoId}">
+                                        ${postulante.nombreAlumno || 'Nombre no disponible'}
+                                        <span class="expand-icon" id="expand-icon-${index}">▼</span>
+                                    </div>
                                     <div class="postulante-email">${postulante.correoAlumno || 'Email no disponible'}</div>
                                 </div>
                                 <div class="postulante-date">${fechaStr}</div>
@@ -210,6 +321,9 @@
                                     ${postulante.mensaje}
                                 </div>
                             ` : ''}
+                            <div class="alumno-profile" id="profile-${index}">
+                                <!-- Profile will be loaded here -->
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -223,6 +337,118 @@
                     </div>
                 `;
             }
+        }
+
+        // Store loaded profiles to avoid re-fetching
+        const loadedProfiles = {};
+
+        window.toggleProfile = async function(alumnoId, index) {
+            const profileDiv = document.getElementById(`profile-${index}`);
+            const expandIcon = document.getElementById(`expand-icon-${index}`);
+
+            if (!profileDiv || !alumnoId) return;
+
+            // Toggle expanded class
+            const isExpanded = profileDiv.classList.contains('expanded');
+
+            if (isExpanded) {
+                // Collapse
+                profileDiv.classList.remove('expanded');
+                expandIcon.classList.remove('expanded');
+            } else {
+                // Expand
+                profileDiv.classList.add('expanded');
+                expandIcon.classList.add('expanded');
+
+                // Load profile if not already loaded
+                if (!loadedProfiles[alumnoId]) {
+                    profileDiv.innerHTML = '<div class="loading-profile">Cargando perfil...</div>';
+
+                    try {
+                        const alumnoRef = doc(db, "alumnos", alumnoId);
+                        const alumnoDoc = await getDoc(alumnoRef);
+
+                        if (alumnoDoc.exists()) {
+                            const alumno = alumnoDoc.data();
+                            loadedProfiles[alumnoId] = alumno;
+
+                            profileDiv.innerHTML = renderAlumnoProfile(alumno);
+                        } else {
+                            profileDiv.innerHTML = '<div class="loading-profile">No se pudo cargar el perfil del alumno.</div>';
+                        }
+                    } catch (error) {
+                        console.error("Error loading alumno profile:", error);
+                        profileDiv.innerHTML = '<div class="loading-profile">Error al cargar el perfil.</div>';
+                    }
+                } else {
+                    // Profile already loaded, just show it
+                    if (profileDiv.innerHTML.includes('loading-profile')) {
+                        profileDiv.innerHTML = renderAlumnoProfile(loadedProfiles[alumnoId]);
+                    }
+                }
+            }
+        };
+
+        function renderAlumnoProfile(alumno) {
+            const parseSkills = (skillsStr) => {
+                if (!skillsStr) return [];
+                return skillsStr.split(',').map(s => s.trim()).filter(s => s);
+            };
+
+            const habilidadesTecnicas = parseSkills(alumno.habilidades_tecnicas);
+            const habilidadesBlandas = parseSkills(alumno.habilidades_blandas);
+            const idiomas = parseSkills(alumno.idiomas);
+
+            return `
+                <div class="profile-section">
+                    <h4>Información Personal</h4>
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <span class="profile-label">Edad</span>
+                            <span class="profile-value">${alumno.edad || 'No especificada'}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Estatus</span>
+                            <span class="profile-value">${alumno.estatus || 'No especificado'}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Semestre</span>
+                            <span class="profile-value">${alumno.semestre || 'No especificado'}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Promedio</span>
+                            <span class="profile-value">${alumno.promedio || 'No especificado'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${habilidadesTecnicas.length > 0 ? `
+                    <div class="profile-section">
+                        <h4>Habilidades Técnicas</h4>
+                        <div class="skills-list">
+                            ${habilidadesTecnicas.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${habilidadesBlandas.length > 0 ? `
+                    <div class="profile-section">
+                        <h4>Habilidades Blandas</h4>
+                        <div class="skills-list">
+                            ${habilidadesBlandas.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${idiomas.length > 0 ? `
+                    <div class="profile-section">
+                        <h4>Idiomas</h4>
+                        <div class="skills-list">
+                            ${idiomas.map(idioma => `<span class="skill-tag">${idioma}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
         }
 
         cargarPostulantes();
