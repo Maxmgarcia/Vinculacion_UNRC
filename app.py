@@ -974,8 +974,8 @@ def eliminar_vacante(vacante_id):
     if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
         return jsonify({"success": False, "error": "Permission denied"}), 403
 
-    # Soft delete: set activa to False
-    if update_vacante(vacante_id, {"activa": False}):
+    # Hard delete: permanently remove from database
+    if delete_vacante(vacante_id):
         return jsonify({"success": True, "message": "Vacante eliminada exitosamente"}), 200
     else:
         return jsonify({"success": False, "error": "Failed to delete vacante"}), 500
