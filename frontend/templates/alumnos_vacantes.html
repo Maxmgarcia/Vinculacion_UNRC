@@ -38,15 +38,19 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 1.5rem;
+      grid-auto-rows: 1fr; /* Asegura que todas las filas tengan la misma altura */
     }
 
     .vacante-card {
       background: #fff;
       border: 1px solid rgba(35, 91, 78, 0.1);
       border-radius: 12px;
-      padding: 1.5rem;
+      padding: 1.5rem; /* Mantener el padding interno */
       box-shadow: 0 5px 15px var(--shadow);
       transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex; /* Convierte la tarjeta en un contenedor flex */
+      flex-direction: column; /* Organiza los elementos hijos en columna */
+      height: 100%; /* Asegura que la tarjeta ocupe toda la altura de su celda en la cuadrícula */
     }
 
     /* Nuevos estilos para la meta-información */
@@ -359,12 +363,12 @@
     <div class="header-content">
       <h1>Vacantes Disponibles</h1>
       <nav class="header-nav">
-        <a href="/alumnos/dashboard" class="logout-btn">
+        <a href="/alumnos/dashboard" class="logout-btn" id="back-button">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
           </svg>
-          Regresar al inicio
+          <span id="back-button-text">Regresar al inicio</span>
         </a>
       </nav>
     </div>
@@ -489,6 +493,16 @@
           card.classList.add("vacante-card");
 
           // Format creation date
+          // Guardar el ID de la vacante en el elemento de la tarjeta para el filtrado
+          card.dataset.vacanteId = doc.id;
+
+          // Check if already applied
+          const yaPostulado = postulacionesAlumno.has(doc.id);
+          const postuladoBadge = yaPostulado ? '<span class="postulado-badge">Postulado ✓</span>' : '';
+
+          // Añadir clase si el alumno ya se ha postulado
+          if (yaPostulado) card.classList.add('postulada');
+
           let fechaCreacion = "Fecha no disponible";
           if (v.created_at) {
             const fecha = v.created_at.toDate();
@@ -497,10 +511,6 @@
             const day = String(fecha.getDate()).padStart(2, '0');
             fechaCreacion = `Creada: ${year}/${month}/${day}`;
           }
-
-          // Check if already applied
-          const yaPostulado = postulacionesAlumno.has(doc.id);
-          const postuladoBadge = yaPostulado ? '<span class="postulado-badge">Postulado ✓</span>' : '';
 
           // Nueva estructura de la tarjeta con iconos y mejor layout
           card.innerHTML = `
@@ -541,6 +551,29 @@
       } catch (error) {
         console.error("Error al cargar las vacantes: ", error);
         vacantesContainer.innerHTML = "<p>Ocurrió un error al cargar las vacantes. Revisa la consola para más detalles.</p>";
+      }
+
+      // Aplicar filtro después de cargar todas las vacantes
+      const urlParams = new URLSearchParams(window.location.search);
+      const filter = urlParams.get('filter');
+
+      if (filter === 'postuladas') {
+        // Cambiar el título de la página
+        document.querySelector('.dashboard-header h1').textContent = 'Mis Postulaciones';
+
+        // Cambiar el botón de regreso para que apunte a las métricas
+        const backButton = document.getElementById('back-button');
+        const backButtonText = document.getElementById('back-button-text');
+        if (backButton && backButtonText) {
+          backButton.href = "{{ url_for('alumnos_metricas') }}";
+          backButtonText.textContent = 'Regresar a Mis Métricas';
+        }
+
+        // Ocultar las vacantes a las que no se ha postulado
+        const todasLasTarjetas = document.querySelectorAll('.vacante-card');
+        todasLasTarjetas.forEach(tarjeta => {
+          if (!tarjeta.classList.contains('postulada')) tarjeta.style.display = 'none';
+        });
       }
     }
 

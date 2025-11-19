@@ -16,16 +16,27 @@
       background-color: #eef3f1;
     }
 
+    .metric-card-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex; /* Asegura que el enlace se comporte como un bloque flexible */
+    }
+
     .metrics-container {
       display: grid;
       /* Ajustado para 3 columnas y mejor responsividad */
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 2rem;
+      grid-auto-rows: 1fr; /* Hace que todas las filas de la cuadrícula tengan la misma altura */
     }
 
     .metric-card,
     .chart-card {
       background: white;
+      display: flex; /* Usa flexbox para controlar el contenido interno */
+      flex-direction: column; /* Organiza el contenido en una columna */
+      width: 100%; /* Asegura que la tarjeta ocupe todo el ancho de su contenedor */
+      height: 100%; /* Asegura que la tarjeta ocupe toda la altura disponible en la celda de la cuadrícula */
     }
 
     .chart-card {
@@ -53,6 +64,7 @@
 
     canvas {
       max-width: 100%;
+      flex-grow: 1; /* Permite que el canvas crezca para ocupar el espacio disponible */
       height: 300px !important;
     }
     
@@ -119,10 +131,12 @@
       {% if total_postulaciones > 0 %}
       <div class="metrics-container">
         <!-- Total de Postulaciones -->
-        <div class="metric-card">
-          <div class="metric-value">{{ total_postulaciones }}</div>
-          <div class="metric-label">Postulaciones Totales</div>
-        </div>
+        <a href="{{ url_for('alumnos_vacantes') }}?filter=postuladas" class="metric-card-link" title="Ver mis postulaciones">
+          <div class="metric-card">
+            <div class="metric-value">{{ total_postulaciones }}</div>
+            <div class="metric-label">Postulaciones Totales</div>
+          </div>
+        </a>
 
         <!-- Tipos de Modalidades Postuladas -->
         <div class="chart-card">
