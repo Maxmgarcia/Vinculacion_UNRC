@@ -336,3 +336,64 @@ body {
         justify-content: center;
     }
 }
+
+/* Dynamic Skills Input Styles */
+.habilidades-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.habilidad-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.habilidad-input-group input {
+    flex-grow: 1;
+}
+
+.remove-habilidad-btn,
+.add-habilidad-btn {
+    background: var(--white);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.remove-habilidad-btn {
+    color: var(--primary-red);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.remove-habilidad-btn:hover {
+    background-color: var(--primary-red);
+    color: var(--white);
+    border-color: var(--primary-red);
+    transform: scale(1.1);
+}
+
+.add-habilidad-btn {
+    color: var(--primary-red);
+    margin-top: 0.5rem;
+}
+
+.add-habilidad-btn:hover {
+    background-color: var(--primary-red);
+    color: var(--white);
+    border-color: var(--primary-red);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(159, 34, 65, 0.2);
+}

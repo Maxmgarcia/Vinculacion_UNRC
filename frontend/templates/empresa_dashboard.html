@@ -104,6 +104,12 @@
                                     <span class="meta-value">{{ vacante.experienciaRequerida }}</span>
                                 </div>
                             {% endif %}
+                            {% if vacante.idiomas %}
+                                <div class="meta-item">
+                                    <span class="meta-label">Idiomas</span>
+                                    <span class="meta-value">{{ vacante.idiomas | join(', ') }}</span>
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Description -->
@@ -122,21 +128,26 @@
                             </div>
                         {% endif %}
 
-                        <!-- Tags -->
-                        {% if vacante.habilidadesDuras or vacante.idiomas %}
+                        <!-- Hard Skills -->
+                        {% if vacante.habilidadesDuras %}
                             <div class="vacante-section">
-                                <h4>Habilidades e Idiomas</h4>
+                                <h4>Habilidades Técnicas</h4>
                                 <div class="tags-container">
-                                    {% if vacante.habilidadesDuras %}
-                                        {% for habilidad in vacante.habilidadesDuras %}
-                                            <span class="tag habilidad">💎 {{ habilidad }}</span>
-                                        {% endfor %}
-                                    {% endif %}
-                                    {% if vacante.idiomas %}
-                                        {% for idioma in vacante.idiomas %}
-                                            <span class="tag idioma">🌐 {{ idioma }}</span>
-                                        {% endfor %}
-                                    {% endif %}
+                                    {% for habilidad in vacante.habilidadesDuras %}
+                                        <span class="tag habilidad-tecnica">{{ habilidad }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Soft Skills -->
+                        {% if vacante.habilidadesBlandas %}
+                            <div class="vacante-section">
+                                <h4>Habilidades Blandas</h4>
+                                <div class="tags-container">
+                                    {% for habilidad in vacante.habilidadesBlandas %}
+                                        <span class="tag habilidad-blanda">{{ habilidad }}</span>
+                                    {% endfor %}
                                 </div>
                             </div>
                         {% endif %}
@@ -153,6 +164,21 @@
                                     </svg>
                                     Ver Postulantes: {{ vacante.postulaciones_count }}
                                 </a>
+                                {% if empresa.suscripcion_activa and vacante.postulaciones_count > 0 %}
+                                    <button onclick="runMatching('{{ vacante.id }}')" class="btn btn-primary btn-smart-match" title="Ejecutar matching inteligente" data-vacante-id="{{ vacante.id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                                            <path d="m16.24 7.76 4.24-4.24m-4.24 16.96 4.24 4.24M7.76 7.76 3.52 3.52m4.24 16.96-4.24 4.24"></path>
+                                        </svg>
+                                        <span class="match-btn-text">Smart Match</span>
+                                        <span class="match-spinner" style="display: none;">
+                                            <svg class="spinner" width="20" height="20" viewBox="0 0 50 50">
+                                                <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                {% endif %}
                                 <a href="{{ url_for('editar_vacante', vacante_id=vacante.id) }}" class="btn btn-edit" title="Editar vacante">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -218,6 +244,52 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al eliminar la vacante. Por favor, intenta de nuevo.');
+            });
+        }
+
+        function runMatching(vacanteId) {
+            const button = document.querySelector(`button[data-vacante-id="${vacanteId}"]`);
+            const textSpan = button.querySelector('.match-btn-text');
+            const spinner = button.querySelector('.match-spinner');
+
+            // Disable button and show spinner
+            button.disabled = true;
+            textSpan.style.display = 'none';
+            spinner.style.display = 'inline-block';
+
+            fetch(`/empresas/vacante/${vacanteId}/match`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success animation briefly
+                    button.classList.add('btn-success-flash');
+                    textSpan.textContent = '✓ Completado';
+                    textSpan.style.display = 'inline';
+                    spinner.style.display = 'none';
+
+                    // Redirect to postulantes page after brief success animation
+                    setTimeout(() => {
+                        window.location.href = `/empresas/vacante/${vacanteId}/postulantes`;
+                    }, 800);
+                } else {
+                    // Show error
+                    alert('Error al ejecutar matching: ' + (data.error || 'Error desconocido'));
+                    textSpan.style.display = 'inline';
+                    spinner.style.display = 'none';
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al ejecutar matching. Por favor, intenta de nuevo.');
+                textSpan.style.display = 'inline';
+                spinner.style.display = 'none';
+                button.disabled = false;
             });
         }
     </script>

@@ -35,6 +35,10 @@ from firebase import (
     get_postulaciones_by_alumno_id,
     update_alumno,
     count_postulaciones_by_vacante_id,
+    get_all_alumnos,
+    get_alumno_by_id,
+    save_matching_scores,
+    get_matching_scores,
 )
 
 app = Flask(
@@ -762,6 +766,150 @@ def empresa_vacante_postulantes(vacante_id):
     )
 
 
+@app.route("/empresas/vacante/<vacante_id>/match", methods=["POST"])
+def match_vacante(vacante_id):
+    """
+    Triggers the matching process for a specific vacante.
+    Only available for empresas with active subscription.
+    """
+    # Check if user is authenticated as empresa
+    if "user_email" not in session or session.get("user_role") != "empresa":
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    # Get empresa document ID from session
+    doc_id = session.get("empresa_doc_id")
+    correo = session["user_email"]
+    empresa = get_empresa_by_correo(correo)
+
+    if not doc_id:
+        if empresa:
+            doc_id = empresa["doc_id"]
+            session["empresa_doc_id"] = doc_id
+        else:
+            return jsonify({"success": False, "error": "Empresa not found"}), 404
+
+    # Check if empresa has active subscription
+    if not empresa.get("suscripcionActiva", False):
+        return jsonify({
+            "success": False,
+            "error": "Se requiere suscripción activa para usar la funcionalidad de matching"
+        }), 403
+
+    # Verify this vacante belongs to the empresa
+    if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
+        return jsonify({"success": False, "error": "Permission denied"}), 403
+
+    # Get vacante details
+    vacante = get_vacante_by_id(vacante_id)
+    if not vacante:
+        return jsonify({"success": False, "error": "Vacante not found"}), 404
+
+    try:
+        # Import matching module
+        from matching import match_vacante_with_postulantes
+
+        print(f"Starting matching for vacante {vacante_id}")
+        print(f"Vacante data: titulo={vacante.get('titulo')}, habilidadesDuras={vacante.get('habilidadesDuras')}")
+
+        # Get all postulaciones for this vacante
+        from firebase_admin import firestore
+        db = firestore.client()
+        vacantes_ref = db.collection("vacantes")
+        vacante_ref = vacantes_ref.document(vacante_id)
+
+        postulaciones_ref = db.collection("postulaciones")
+        query = postulaciones_ref.where("vacanteID", "==", vacante_ref)
+        postulaciones_docs = query.stream()
+
+        postulaciones = []
+        alumno_ids = set()
+        for doc in postulaciones_docs:
+            post_data = doc.to_dict()
+            postulaciones.append(post_data)
+            alumno_ref = post_data.get("alumnoID")
+            if alumno_ref:
+                alumno_ids.add(alumno_ref.id)
+
+        print(f"Found {len(postulaciones)} postulaciones with {len(alumno_ids)} unique alumnos")
+
+        # Get all alumno data
+        alumnos_dict = {}
+        for alumno_id in alumno_ids:
+            alumno_data = get_alumno_by_id(alumno_id)
+            if alumno_data:
+                alumnos_dict[alumno_id] = alumno_data
+                print(f"Loaded alumno {alumno_id}: {alumno_data.get('nombre')}")
+
+        print(f"Loaded data for {len(alumnos_dict)} alumnos")
+
+        # Perform matching
+        print("Starting matching process...")
+        scores = match_vacante_with_postulantes(vacante, postulaciones, alumnos_dict)
+        print(f"Matching completed. Generated {len(scores)} scores")
+
+        # Save scores to database
+        print("Saving scores to database...")
+        save_matching_scores(vacante_id, scores)
+        print("Scores saved successfully")
+
+        return jsonify({
+            "success": True,
+            "message": "Matching completado exitosamente",
+            "matched_count": len(scores)
+        }), 200
+
+    except Exception as e:
+        print(f"Error during matching: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": f"Error durante el proceso de matching: {str(e)}"
+        }), 500
+
+
+@app.route("/empresas/vacante/<vacante_id>/scores", methods=["GET"])
+def get_vacante_scores(vacante_id):
+    """
+    Retrieves the matching scores for a vacante.
+    """
+    # Check if user is authenticated as empresa
+    if "user_email" not in session or session.get("user_role") != "empresa":
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    # Get empresa document ID from session
+    doc_id = session.get("empresa_doc_id")
+
+    if not doc_id:
+        correo = session["user_email"]
+        empresa = get_empresa_by_correo(correo)
+        if empresa:
+            doc_id = empresa["doc_id"]
+            session["empresa_doc_id"] = doc_id
+        else:
+            return jsonify({"success": False, "error": "Empresa not found"}), 404
+
+    # Verify this vacante belongs to the empresa
+    if not verify_vacante_belongs_to_empresa(vacante_id, doc_id):
+        return jsonify({"success": False, "error": "Permission denied"}), 403
+
+    try:
+        # Get scores from database
+        scores = get_matching_scores(vacante_id)
+
+        return jsonify({
+            "success": True,
+            "scores": scores
+        }), 200
+
+    except Exception as e:
+        print(f"Error retrieving scores: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Error al obtener scores: {str(e)}"
+        }), 500
+
+
 @app.route("/empresas/nueva-vacante", methods=["GET", "POST"])
 def nueva_vacante():
     # Check if user is authenticated as empresa
@@ -820,22 +968,22 @@ def nueva_vacante():
         else:
             vacante_data["sueldo"] = None
 
-        # Handle arrays: habilidadesDuras and idiomas
-        habilidades_str = request.form.get("habilidadesDuras", "").strip()
-        if habilidades_str:
-            vacante_data["habilidadesDuras"] = [
-                h.strip() for h in habilidades_str.split(",") if h.strip()
-            ]
-        else:
-            vacante_data["habilidadesDuras"] = []
+        # Handle arrays: habilidadesDuras, habilidadesBlandas, and idiomas
+        # Using getlist() to handle multiple inputs with same name
+        habilidades_duras_list = request.form.getlist("habilidadesDuras")
+        vacante_data["habilidadesDuras"] = [
+            h.strip() for h in habilidades_duras_list if h.strip()
+        ]
 
-        idiomas_str = request.form.get("idiomas", "").strip()
-        if idiomas_str:
-            vacante_data["idiomas"] = [
-                i.strip() for i in idiomas_str.split(",") if i.strip()
-            ]
-        else:
-            vacante_data["idiomas"] = []
+        habilidades_blandas_list = request.form.getlist("habilidadesBlandas")
+        vacante_data["habilidadesBlandas"] = [
+            h.strip() for h in habilidades_blandas_list if h.strip()
+        ]
+
+        idiomas_list = request.form.getlist("idiomas")
+        vacante_data["idiomas"] = [
+            i.strip() for i in idiomas_list if i.strip()
+        ]
 
         # Validate required fields
         if not vacante_data["titulo"]:
@@ -915,22 +1063,22 @@ def editar_vacante(vacante_id):
         else:
             vacante_data["sueldo"] = None
 
-        # Handle arrays: habilidadesDuras and idiomas
-        habilidades_str = request.form.get("habilidadesDuras", "").strip()
-        if habilidades_str:
-            vacante_data["habilidadesDuras"] = [
-                h.strip() for h in habilidades_str.split(",") if h.strip()
-            ]
-        else:
-            vacante_data["habilidadesDuras"] = []
+        # Handle arrays: habilidadesDuras, habilidadesBlandas, and idiomas
+        # Using getlist() to handle multiple inputs with same name
+        habilidades_duras_list = request.form.getlist("habilidadesDuras")
+        vacante_data["habilidadesDuras"] = [
+            h.strip() for h in habilidades_duras_list if h.strip()
+        ]
 
-        idiomas_str = request.form.get("idiomas", "").strip()
-        if idiomas_str:
-            vacante_data["idiomas"] = [
-                i.strip() for i in idiomas_str.split(",") if i.strip()
-            ]
-        else:
-            vacante_data["idiomas"] = []
+        habilidades_blandas_list = request.form.getlist("habilidadesBlandas")
+        vacante_data["habilidadesBlandas"] = [
+            h.strip() for h in habilidades_blandas_list if h.strip()
+        ]
+
+        idiomas_list = request.form.getlist("idiomas")
+        vacante_data["idiomas"] = [
+            i.strip() for i in idiomas_list if i.strip()
+        ]
 
         # Validate required fields
         if not vacante_data["titulo"]:

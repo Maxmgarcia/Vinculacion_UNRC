@@ -560,3 +560,113 @@ def update_alumno(doc_id, data):
     except Exception as e:
         print(f"Error updating alumno: {e}")
         return False
+
+
+def get_all_alumnos():
+    """
+    Retrieves all alumno documents from the alumnos collection.
+    Returns a list of all alumno documents.
+    """
+    try:
+        db = firestore.client()
+        alumnos_ref = db.collection("alumnos")
+        docs = alumnos_ref.stream()
+
+        alumnos = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["doc_id"] = doc.id  # Include document ID
+            alumnos.append(data)
+
+        return alumnos
+    except Exception as e:
+        print(f"Error retrieving all alumnos: {e}")
+        return []
+
+
+def get_alumno_by_id(alumno_doc_id):
+    """
+    Retrieves alumno document by document ID.
+    Returns the document data if found, otherwise None.
+    """
+    try:
+        db = firestore.client()
+        alumnos_ref = db.collection("alumnos")
+        doc = alumnos_ref.document(alumno_doc_id).get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            data["doc_id"] = doc.id
+            return data
+
+        return None
+    except Exception as e:
+        print(f"Error retrieving alumno by ID: {e}")
+        return None
+
+
+def save_matching_scores(vacante_id, scores_dict):
+    """
+    Saves matching scores for a vacante in a subcollection.
+
+    Args:
+        vacante_id: The document ID of the vacante
+        scores_dict: Dictionary mapping alumno_id to score data
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        db = firestore.client()
+        vacantes_ref = db.collection("vacantes")
+        vacante_doc = vacantes_ref.document(vacante_id)
+
+        # Store scores in a subcollection
+        scores_ref = vacante_doc.collection("matching_scores")
+
+        # Delete existing scores first
+        existing_scores = scores_ref.stream()
+        for doc in existing_scores:
+            doc.reference.delete()
+
+        # Add new scores
+        for alumno_id, score_data in scores_dict.items():
+            score_doc = scores_ref.document(alumno_id)
+            score_doc.set({
+                **score_data,
+                "computed_at": firestore.SERVER_TIMESTAMP
+            })
+
+        print(f"Matching scores saved for vacante {vacante_id}")
+        return True
+    except Exception as e:
+        print(f"Error saving matching scores: {e}")
+        return False
+
+
+def get_matching_scores(vacante_id):
+    """
+    Retrieves matching scores for a vacante.
+
+    Args:
+        vacante_id: The document ID of the vacante
+
+    Returns:
+        Dictionary mapping alumno_id to score data
+    """
+    try:
+        db = firestore.client()
+        vacantes_ref = db.collection("vacantes")
+        vacante_doc = vacantes_ref.document(vacante_id)
+        scores_ref = vacante_doc.collection("matching_scores")
+
+        scores_dict = {}
+        docs = scores_ref.stream()
+
+        for doc in docs:
+            scores_dict[doc.id] = doc.to_dict()
+
+        return scores_dict
+    except Exception as e:
+        print(f"Error retrieving matching scores: {e}")
+        return {}

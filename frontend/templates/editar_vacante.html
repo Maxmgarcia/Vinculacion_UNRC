@@ -144,15 +144,27 @@
                 <h2 class="section-title">Habilidades e Idiomas</h2>
 
                 <div class="form-group">
-                    <label for="habilidadesDuras" class="form-label">Habilidades Duras</label>
-                    <input type="text" id="habilidadesDuras" name="habilidadesDuras" class="form-input" placeholder="Separa cada habilidad con coma. Ej: JavaScript, Python, SQL" value="{% if vacante.habilidadesDuras %}{{ vacante.habilidadesDuras|join(', ') }}{% endif %}">
-                    <span class="form-hint">Ingresa las habilidades separadas por comas</span>
+                    <label for="habilidadesDuras" class="form-label">Habilidades Técnicas</label>
+                    <div id="habilidades-habilidadesDuras-container" class="habilidades-container">
+                        <!-- Los inputs se generarán con JS -->
+                    </div>
+                    <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('habilidadesDuras')">+ Agregar Habilidad</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="habilidadesBlandas" class="form-label">Habilidades Blandas</label>
+                    <div id="habilidades-habilidadesBlandas-container" class="habilidades-container">
+                        <!-- Los inputs se generarán con JS -->
+                    </div>
+                    <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('habilidadesBlandas')">+ Agregar Habilidad</button>
                 </div>
 
                 <div class="form-group">
                     <label for="idiomas" class="form-label">Idiomas</label>
-                    <input type="text" id="idiomas" name="idiomas" class="form-input" placeholder="Separa cada idioma con coma. Ej: Español, Inglés, Francés" value="{% if vacante.idiomas %}{{ vacante.idiomas|join(', ') }}{% endif %}">
-                    <span class="form-hint">Ingresa los idiomas separados por comas</span>
+                    <div id="habilidades-idiomas-container" class="habilidades-container">
+                        <!-- Los inputs se generarán con JS -->
+                    </div>
+                    <button type="button" class="add-habilidad-btn" onclick="agregarHabilidad('idiomas')">+ Agregar Idioma</button>
                 </div>
             </div>
 
@@ -163,5 +175,50 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function agregarHabilidad(tipo, valor = '') {
+            const container = document.getElementById(`habilidades-${tipo}-container`);
+            const nuevoInputDiv = document.createElement('div');
+            nuevoInputDiv.className = 'habilidad-input-group';
+
+            const nuevoInput = document.createElement('input');
+            nuevoInput.type = 'text';
+            nuevoInput.name = tipo;
+            nuevoInput.value = valor;
+            nuevoInput.placeholder = `Ingresa una habilidad`;
+            nuevoInput.className = 'form-input';
+
+            const botonEliminar = document.createElement('button');
+            botonEliminar.type = 'button';
+            botonEliminar.className = 'remove-habilidad-btn';
+            botonEliminar.textContent = '×';
+            botonEliminar.onclick = function() {
+                container.removeChild(nuevoInputDiv);
+            };
+
+            nuevoInputDiv.appendChild(nuevoInput);
+            nuevoInputDiv.appendChild(botonEliminar);
+            container.appendChild(nuevoInputDiv);
+        }
+
+        function inicializarCamposDinamicos(tipo, datosExistentes, cantidadPorDefecto = 3) {
+            const valores = (datosExistentes || '').split(',').map(h => h.trim()).filter(h => h);
+            if (valores.length > 0) {
+                valores.forEach(valor => agregarHabilidad(tipo, valor));
+            } else {
+                for (let i = 0; i < cantidadPorDefecto; i++) {
+                    agregarHabilidad(tipo);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar todos los campos dinámicos con datos existentes
+            inicializarCamposDinamicos('habilidadesDuras', "{% if vacante.habilidadesDuras %}{{ vacante.habilidadesDuras|join(', ') }}{% endif %}");
+            inicializarCamposDinamicos('habilidadesBlandas', "{% if vacante.habilidadesBlandas %}{{ vacante.habilidadesBlandas|join(', ') }}{% endif %}");
+            inicializarCamposDinamicos('idiomas', "{% if vacante.idiomas %}{{ vacante.idiomas|join(', ') }}{% endif %}", 1);
+        });
+    </script>
 </body>
 </html>
