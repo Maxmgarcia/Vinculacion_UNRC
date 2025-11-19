@@ -67,6 +67,47 @@
             font-size: 0.85rem;
         }
 
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-left: auto;
+        }
+
+        .score-badge.excellent {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .score-badge.good {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+        }
+
+        .score-badge.average {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+        }
+
+        .score-badge.low {
+            background: linear-gradient(135deg, #9E9E9E, #757575);
+            color: white;
+            box-shadow: 0 2px 8px rgba(158, 158, 158, 0.4);
+        }
+
+        .score-details {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 0.25rem;
+        }
+
         .postulante-mensaje {
             background: #f5f5f5;
             padding: 1rem;
@@ -243,7 +284,53 @@
         const postulantesListContainer = document.getElementById("postulantes-list");
         const postulantesCountContainer = document.getElementById("postulantes-count");
 
+        // Global variable to store scores
+        let matchingScores = {};
+
+        // Fetch matching scores from server
+        async function fetchMatchingScores() {
+            try {
+                const response = await fetch(`/empresas/vacante/${vacanteId}/scores`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        matchingScores = data.scores;
+                        console.log("Matching scores loaded:", matchingScores);
+                    }
+                }
+            } catch (error) {
+                console.log("No matching scores available yet:", error);
+            }
+        }
+
+        function getScoreClass(score) {
+            if (score >= 8) return 'excellent';
+            if (score >= 6) return 'good';
+            if (score >= 4) return 'average';
+            return 'low';
+        }
+
+        function renderScoreBadge(alumnoId) {
+            const scoreData = matchingScores[alumnoId];
+            if (!scoreData) return '';
+
+            const finalScore = scoreData.final_score || 0;
+            const hardScore = scoreData.hard_skills_score || 0;
+            const softScore = scoreData.soft_skills_score || 0;
+
+            return `
+                <div class="score-badge ${getScoreClass(finalScore)}">
+                    <span>Match: ${finalScore.toFixed(1)}/10</span>
+                    <div class="score-details">
+                        H: ${hardScore.toFixed(1)} | S: ${softScore.toFixed(1)}
+                    </div>
+                </div>
+            `;
+        }
+
         async function cargarPostulantes() {
+            // First, load matching scores
+            await fetchMatchingScores();
             try {
                 console.log("Cargando postulantes para vacante:", vacanteId);
 
@@ -290,6 +377,22 @@
                 // Update count
                 postulantesCountContainer.textContent = `${postulantes.length} postulante${postulantes.length !== 1 ? 's' : ''}`;
 
+                // Sort postulantes by matching score if available
+                postulantes.forEach((p, idx) => {
+                    const alumnoId = p.alumnoID?.id;
+                    p._scoreData = matchingScores[alumnoId];
+                    p._index = idx;
+                });
+
+                // Sort by score descending if scores are available
+                if (Object.keys(matchingScores).length > 0) {
+                    postulantes.sort((a, b) => {
+                        const scoreA = a._scoreData?.final_score || -1;
+                        const scoreB = b._scoreData?.final_score || -1;
+                        return scoreB - scoreA;
+                    });
+                }
+
                 // Render postulantes
                 postulantesListContainer.innerHTML = postulantes.map((postulante, index) => {
                     const fecha = postulante.fechaPostulacion?.toDate();
@@ -313,6 +416,7 @@
                                     </div>
                                     <div class="postulante-email">${postulante.correoAlumno || 'Email no disponible'}</div>
                                 </div>
+                                ${renderScoreBadge(alumnoId)}
                                 <div class="postulante-date">${fechaStr}</div>
                             </div>
                             ${postulante.mensaje ? `

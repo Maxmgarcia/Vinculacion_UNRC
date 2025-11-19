@@ -327,14 +327,27 @@ body {
     align-items: center;
 }
 
-.tag.habilidad {
+.tag.habilidad-tecnica {
     background: rgba(159, 34, 65, 0.1);
     color: var(--primary-red);
+    border: 1px solid rgba(159, 34, 65, 0.2);
+}
+
+.tag.habilidad-blanda {
+    background: rgba(188, 149, 92, 0.1);
+    color: var(--primary-orange);
+    border: 1px solid rgba(188, 149, 92, 0.2);
 }
 
 .tag.idioma {
     background: rgba(108, 117, 125, 0.1);
     color: var(--dark-gray);
+}
+
+/* Legacy support for old class name */
+.tag.habilidad {
+    background: rgba(159, 34, 65, 0.1);
+    color: var(--primary-red);
 }
 
 /* Action Buttons */
@@ -439,5 +452,102 @@ body {
 
     .vacante-card {
         padding: 1.25rem;
+    }
+}
+
+/* Smart Match Button - Same color as primary but with shimmer */
+.btn-smart-match {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-smart-match::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmer 3s infinite;
+    z-index: 1;
+}
+
+.btn-smart-match svg,
+.btn-smart-match span {
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+.btn-smart-match:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-smart-match:disabled::before {
+    animation: none;
+}
+
+/* Success flash animation */
+.btn-success-flash {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    animation: flash-success 0.5s ease;
+}
+
+@keyframes flash-success {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    }
+    50% {
+        box-shadow: 0 8px 30px rgba(76, 175, 80, 0.8);
+        transform: scale(1.05);
+    }
+}
+
+/* Spinner animation */
+.spinner {
+    animation: rotate 1s linear infinite;
+}
+
+.spinner .path {
+    stroke: white;
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
     }
 }
