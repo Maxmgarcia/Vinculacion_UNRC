@@ -395,10 +395,16 @@
           <p id="detalle-requisitos"></p>
         </div>
 
-        <div class="detalle-seccion">
-          <h4>Habilidades e Idiomas</h4>
-          <ul id="detalle-habilidades" class="habilidades-lista"></ul>
+        <div class="detalle-seccion" id="seccion-habilidades">
+          <h4>Habilidades Requeridas</h4>
+          <ul id="detalle-habilidades-lista" class="habilidades-lista"></ul>
         </div>
+
+        <div class="detalle-seccion" id="seccion-idiomas">
+          <h4>Idiomas</h4>
+          <ul id="detalle-idiomas-lista" class="habilidades-lista"></ul>
+        </div>
+
       </div>
       <div class="modal-actions"></div>
     </div>
@@ -550,17 +556,27 @@
       document.getElementById('detalle-requisitos').textContent = v.requisitos || 'No especificados.';
 
       // Llenar habilidades
-      const habilidadesContainer = document.getElementById('detalle-habilidades');
-      habilidadesContainer.innerHTML = '';
-      (v.habilidadesDuras || []).forEach(h => {
-        habilidadesContainer.innerHTML += `<li class="habilidad-tag">${h}</li>`;
-      });
-      (v.habilidadesBlandas || []).forEach(h => {
-        habilidadesContainer.innerHTML += `<li class="habilidad-tag">${h}</li>`;
-      });
-      (v.idiomas || []).forEach(i => {
-        habilidadesContainer.innerHTML += `<li class="habilidad-tag">${i}</li>`;
-      });
+      const habilidadesLista = document.getElementById('detalle-habilidades-lista');
+      const seccionHabilidades = document.getElementById('seccion-habilidades');
+      habilidadesLista.innerHTML = '';
+      const todasLasHabilidades = [...(v.habilidadesDuras || []), ...(v.habilidadesBlandas || [])];
+
+      if (todasLasHabilidades.length > 0) {
+        todasLasHabilidades.forEach(h => {
+          habilidadesLista.innerHTML += `<li class="habilidad-tag">${h}</li>`;
+        });
+        seccionHabilidades.style.display = 'block';
+      } else {
+        seccionHabilidades.style.display = 'none';
+      }
+
+      // Llenar idiomas
+      const idiomasLista = document.getElementById('detalle-idiomas-lista');
+      const seccionIdiomas = document.getElementById('seccion-idiomas');
+      idiomasLista.innerHTML = '';
+      const idiomas = v.idiomas || [];
+      idiomas.forEach(i => idiomasLista.innerHTML += `<li class="habilidad-tag">${i}</li>`);
+      seccionIdiomas.style.display = idiomas.length > 0 ? 'block' : 'none';
 
       // Añadir botón de postularse o mensaje de ya postulado
       const modalActions = document.querySelector('#modalDetalles .modal-actions');
