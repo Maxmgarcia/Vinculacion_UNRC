@@ -39,6 +39,7 @@ from firebase import (
     get_alumno_by_id,
     save_matching_scores,
     get_matching_scores,
+    create_postulacion,
 )
 
 app = Flask(
@@ -382,7 +383,20 @@ def alumnos_postular():
     print(f"  - Vacante: {nombre_vacante} (ID: {vacante_id})")
     print(f"  - Fecha: {fecha_postulacion}")
 
-    return jsonify({"success": True, "msg": "Postulación recibida correctamente."})
+    # Save postulation to database
+    postulacion_id = create_postulacion(data)
+
+    if not postulacion_id:
+        return jsonify({
+            "success": False,
+            "msg": "Error al guardar la postulación"
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "msg": "Postulación recibida correctamente.",
+        "postulacion_id": postulacion_id
+    })
 
 @app.route("/alumnos/metricas")
 def alumnos_metricas():
@@ -430,8 +444,8 @@ def empresas():
     # Redirect to login if not authenticated as a company
     if "user_role" not in session or session["user_role"] != "empresa":
         return redirect(url_for("empresas_login"))
-    # Redirect to empresa_datos which handles all the logic
-    return redirect(url_for("empresa_datos"))
+    # Redirect to empresa dashboard
+    return redirect(url_for("empresa_dashboard"))
 
 
 @app.route("/empresas/login", methods=["GET", "POST"])

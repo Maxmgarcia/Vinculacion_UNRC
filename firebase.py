@@ -472,6 +472,59 @@ def count_postulaciones_by_vacante_id(vacante_id):
         print(f"Error counting postulaciones by vacante ID: {e}")
         return 0
 
+
+def create_postulacion(postulacion_data):
+    """
+    Creates a new postulacion document in Firestore.
+
+    Args:
+        postulacion_data: Dictionary containing postulacion information including:
+            - alumnoID: ID of the alumno
+            - vacanteID: ID of the vacante
+            - empresaID: ID of the empresa
+            - nombreAlumno, correoAlumno, nombreEmpresa, correoEmpresa, nombreVacante
+            - fechaPostulacion: Timestamp
+            - mensaje: Optional message from alumno
+
+    Returns:
+        The document ID of the created postulacion, or None if error
+    """
+    try:
+        db = firestore.client()
+        postulaciones_ref = db.collection("postulaciones")
+
+        # Create references for IDs
+        alumno_ref = db.collection("alumnos").document(postulacion_data['alumnoID'])
+        vacante_ref = db.collection("vacantes").document(postulacion_data['vacanteID'])
+        empresa_ref = db.collection("empresas").document(postulacion_data['empresaID'])
+
+        # Prepare document data with references
+        doc_data = {
+            'alumnoID': alumno_ref,
+            'vacanteID': vacante_ref,
+            'empresaID': empresa_ref,
+            'nombreAlumno': postulacion_data.get('nombreAlumno', ''),
+            'correoAlumno': postulacion_data.get('correoAlumno', ''),
+            'nombreEmpresa': postulacion_data.get('nombreEmpresa', ''),
+            'correoEmpresa': postulacion_data.get('correoEmpresa', ''),
+            'nombreVacante': postulacion_data.get('nombreVacante', ''),
+            'fechaPostulacion': postulacion_data.get('fechaPostulacion'),
+            'mensaje': postulacion_data.get('mensaje', '')
+        }
+
+        # Add the document
+        doc_ref = postulaciones_ref.add(doc_data)
+        doc_id = doc_ref[1].id
+
+        print(f"Postulacion created successfully with ID: {doc_id}")
+        return doc_id
+
+    except Exception as e:
+        print(f"Error creating postulacion: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 def get_alumno_by_correo(correo):
     """
     Retrieves alumno document by correo (email).
@@ -670,3 +723,54 @@ def get_matching_scores(vacante_id):
     except Exception as e:
         print(f"Error retrieving matching scores: {e}")
         return {}
+
+
+def calculate_and_save_single_score(vacante_id, alumno_id):
+    """
+    Calculates and saves the matching score for a single alumno-vacante pair.
+
+    Args:
+        vacante_id: The document ID of the vacante
+        alumno_id: The document ID of the alumno
+
+    Returns:
+        The calculated scores dict, or None if error
+    """
+    try:
+        from matching import calculate_matching_score
+
+        # Get vacante data
+        vacante_data = get_vacante_by_id(vacante_id)
+        if not vacante_data:
+            print(f"Vacante {vacante_id} not found")
+            return None
+
+        # Get alumno data
+        alumno_data = get_alumno_by_id(alumno_id)
+        if not alumno_data:
+            print(f"Alumno {alumno_id} not found")
+            return None
+
+        # Calculate score
+        scores = calculate_matching_score(vacante_data, alumno_data)
+
+        # Save score to database
+        db = firestore.client()
+        vacantes_ref = db.collection("vacantes")
+        vacante_doc = vacantes_ref.document(vacante_id)
+        scores_ref = vacante_doc.collection("matching_scores")
+
+        score_doc = scores_ref.document(alumno_id)
+        score_doc.set({
+            **scores,
+            "computed_at": firestore.SERVER_TIMESTAMP
+        })
+
+        print(f"Score calculated and saved for alumno {alumno_id} on vacante {vacante_id}: {scores['final_score']}/10")
+        return scores
+
+    except Exception as e:
+        print(f"Error calculating and saving single score: {e}")
+        import traceback
+        traceback.print_exc()
+        return None

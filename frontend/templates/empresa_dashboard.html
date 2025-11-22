@@ -272,9 +272,9 @@
                     textSpan.style.display = 'inline';
                     spinner.style.display = 'none';
 
-                    // Redirect to postulantes page after brief success animation
+                    // Redirect to postulantes page with show_scores parameter after brief success animation
                     setTimeout(() => {
-                        window.location.href = `/empresas/vacante/${vacanteId}/postulantes`;
+                        window.location.href = `/empresas/vacante/${vacanteId}/postulantes?show_scores=true`;
                     }, 800);
                 } else {
                     // Show error

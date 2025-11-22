@@ -26,10 +26,11 @@
         }
 
         .postulante-header {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             margin-bottom: 1rem;
+            gap: 1rem;
         }
 
         .postulante-name {
@@ -65,17 +66,20 @@
         .postulante-date {
             color: #999;
             font-size: 0.85rem;
+            text-align: right;
+            justify-self: end;
         }
 
         .score-badge {
             display: inline-flex;
+            flex-direction: row;
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
             border-radius: 20px;
             font-weight: 700;
             font-size: 0.95rem;
-            margin-left: auto;
+            justify-self: center;
         }
 
         .score-badge.excellent {
@@ -284,22 +288,43 @@
         const postulantesListContainer = document.getElementById("postulantes-list");
         const postulantesCountContainer = document.getElementById("postulantes-count");
 
+        // Check if we should show scores based on URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldShowScores = urlParams.get('show_scores') === 'true';
+        console.log("Should show scores:", shouldShowScores);
+
         // Global variable to store scores
         let matchingScores = {};
 
-        // Fetch matching scores from server
+        // Fetch matching scores from server (only if shouldShowScores is true)
         async function fetchMatchingScores() {
+            // Don't fetch scores if we shouldn't show them
+            if (!shouldShowScores) {
+                console.log("Skipping score fetch - show_scores parameter not set");
+                return;
+            }
+
             try {
+                console.log(`Fetching scores from: /empresas/vacante/${vacanteId}/scores`);
                 const response = await fetch(`/empresas/vacante/${vacanteId}/scores`);
+                console.log("Response status:", response.status);
+
                 if (response.ok) {
                     const data = await response.json();
+                    console.log("Response data:", data);
+
                     if (data.success) {
                         matchingScores = data.scores;
                         console.log("Matching scores loaded:", matchingScores);
+                        console.log("Number of scores:", Object.keys(matchingScores).length);
+                    } else {
+                        console.log("API returned success=false:", data);
                     }
+                } else {
+                    console.log("Response not OK:", response.status, response.statusText);
                 }
             } catch (error) {
-                console.log("No matching scores available yet:", error);
+                console.log("Error fetching matching scores:", error);
             }
         }
 
@@ -311,12 +336,22 @@
         }
 
         function renderScoreBadge(alumnoId) {
+            console.log(`renderScoreBadge called for alumno: ${alumnoId}`);
+            console.log(`Available scores:`, Object.keys(matchingScores));
+
             const scoreData = matchingScores[alumnoId];
-            if (!scoreData) return '';
+            console.log(`Score data for ${alumnoId}:`, scoreData);
+
+            if (!scoreData) {
+                console.log(`No score data found for alumno ${alumnoId}`);
+                return '';
+            }
 
             const finalScore = scoreData.final_score || 0;
             const hardScore = scoreData.hard_skills_score || 0;
             const softScore = scoreData.soft_skills_score || 0;
+
+            console.log(`Rendering badge for ${alumnoId}: Final=${finalScore}, Hard=${hardScore}, Soft=${softScore}`);
 
             return `
                 <div class="score-badge ${getScoreClass(finalScore)}">
