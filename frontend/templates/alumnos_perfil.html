@@ -136,6 +136,109 @@
         .add-habilidad-btn:hover {
             transform: scale(1.1);
         }
+
+        /* --- Estilos para el Chatbot --- */
+        .chat-bubble {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-teal));
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(35, 91, 78, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 1000;
+        }
+
+        .chat-bubble:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(35, 91, 78, 0.5);
+        }
+
+        .chat-container {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            bottom: 6.5rem;
+            right: 2rem;
+            width: 350px;
+            max-width: 90vw;
+            height: 450px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1001;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        .chat-container.visible {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chat-header {
+            background: var(--primary-green);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 { margin: 0; font-size: 1.1rem; }
+        .close-chat-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        .chat-body {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chat-message {
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .chat-message.bot {
+            background: #e9e9eb;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        .chat-message.user {
+            background: var(--secondary-teal);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .chat-footer {
+            display: flex;
+            padding: 0.75rem;
+            border-top: 1px solid #eee;
+        }
+
+        #chat-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 8px; padding: 0.5rem; margin-right: 0.5rem; }
+        #send-chat-btn { background: var(--primary-green); color: white; border: none; border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; }
+
     </style>
 </head>
 
@@ -255,6 +358,28 @@
         </main>
     </div>
 
+    <!-- Chatbot -->
+    <div class="chat-bubble" id="chat-bubble">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+        </svg>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+            <h3>Asistente de Habilidades</h3>
+            <button class="close-chat-btn" id="close-chat-btn">&times;</button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <!-- Los mensajes del chat se agregarán aquí -->
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Pide sugerencias...">
+            <button id="send-chat-btn">Enviar</button>
+        </div>
+    </div>
+    <!-- Fin Chatbot -->
+
     <script>
         function agregarHabilidad(tipo, valor = '') {
             const container = document.getElementById(`habilidades-${tipo}-container`);
@@ -314,6 +439,70 @@
                 // Puedes crear un input hidden para enviar el string combinado
                 // O modificar el backend para que acepte una lista. Por ahora, asumimos que el backend no cambia.
             });
+        });
+
+        // --- Lógica del Chatbot ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBubble = document.getElementById('chat-bubble');
+            const chatContainer = document.getElementById('chat-container');
+            const closeChatBtn = document.getElementById('close-chat-btn');
+            const chatBody = document.getElementById('chat-body');
+            const chatInput = document.getElementById('chat-input');
+            const sendChatBtn = document.getElementById('send-chat-btn');
+
+            chatBubble.addEventListener('click', () => {
+                chatContainer.classList.toggle('visible');
+                if (chatContainer.classList.contains('visible') && chatBody.children.length === 0) {
+                    agregarMensajeBot("¡Hola! Soy tu asistente. Puedo darte ideas sobre habilidades. Escribe 'habilidades técnicas' o 'habilidades blandas' para recibir sugerencias.");
+                }
+            });
+
+            closeChatBtn.addEventListener('click', () => {
+                chatContainer.classList.remove('visible');
+            });
+
+            sendChatBtn.addEventListener('click', enviarMensajeUsuario);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    enviarMensajeUsuario();
+                }
+            });
+
+            function enviarMensajeUsuario() {
+                const mensaje = chatInput.value.trim().toLowerCase();
+                if (!mensaje) return;
+
+                agregarMensajeUsuario(chatInput.value);
+                chatInput.value = '';
+
+                setTimeout(() => procesarMensaje(mensaje), 500);
+            }
+
+            function procesarMensaje(mensaje) {
+                if (mensaje.includes('tecnicas') || mensaje.includes('técnicas')) {
+                    agregarMensajeBot("Algunas habilidades técnicas populares son: Python, Java, JavaScript, SQL, Git, Docker, AWS/Azure, React, Angular, Node.js, Análisis de datos, Machine Learning.");
+                } else if (mensaje.includes('blandas')) {
+                    agregarMensajeBot("Aquí tienes algunas habilidades blandas muy valoradas: Comunicación efectiva, Trabajo en equipo, Resolución de problemas, Liderazgo, Adaptabilidad, Pensamiento crítico, Creatividad, Gestión del tiempo.");
+                } else {
+                    agregarMensajeBot("No entendí muy bien. Prueba pidiendo 'habilidades técnicas' o 'habilidades blandas'.");
+                }
+            }
+
+            function agregarMensaje(texto, clase) {
+                const divMensaje = document.createElement('div');
+                divMensaje.className = `chat-message ${clase}`;
+                divMensaje.textContent = texto;
+                chatBody.appendChild(divMensaje);
+                chatBody.scrollTop = chatBody.scrollHeight; // Auto-scroll
+            }
+
+            function agregarMensajeBot(texto) {
+                agregarMensaje(texto, 'bot');
+            }
+
+            function agregarMensajeUsuario(texto) {
+                agregarMensaje(texto, 'user');
+            }
         });
     </script>
 </body>
